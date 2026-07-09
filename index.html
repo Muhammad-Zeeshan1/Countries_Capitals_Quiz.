@@ -1,0 +1,2187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Capital Compass — World Capitals Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&family=Great+Vibes&family=Playfair+Display:wght@700;900&family=Dancing+Script:wght@400;500;600;700&family=Pacifico&family=Sacramento&family=Caveat:wght@400;500;600;700&family=Satisfy&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{
+  --navy:#161327; --navy-2:#211c3f; --parchment:#f5f4fb;
+  --gold:#f5a623; --gold-2:#ffce6d; --teal:#00b8a9; --teal-2:#12d6c5;
+  --ink:#181828; --ink-soft:#6b6b83; --success:#22c55e; --danger:#ef4444;
+  --card-light:rgba(255,255,255,.72); --card-dark:rgba(28,23,54,.72);
+  --border-light:rgba(24,20,45,.10); --border-dark:rgba(255,255,255,.12);
+  --radius:20px; --shadow:0 20px 50px rgba(24,20,45,.10);
+  --lb-top1: linear-gradient(135deg,#ffce6d,#f5a623);
+  --lb-top2: linear-gradient(135deg,#e2e5ec,#a7aebc);
+  --lb-top3: linear-gradient(135deg,#e0a06b,#b5713a);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body,button,input,select{font-family:'Inter',sans-serif;}
+h1,h2,h3{font-family:'Sora',sans-serif;}
+body{-webkit-tap-highlight-color:transparent;overflow-y:auto;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--gold);border-radius:10px;}
+.scroll-hide::-webkit-scrollbar{display:none;} .scroll-hide{scrollbar-width:none;}
+body.theme-light{background:radial-gradient(circle at 12% 15%,rgba(245,166,35,.10),transparent 42%),radial-gradient(circle at 88% 82%,rgba(0,184,169,.14),transparent 48%),var(--parchment);color:var(--ink);}
+body.theme-dark{background:radial-gradient(circle at 12% 15%,rgba(245,166,35,.10),transparent 42%),radial-gradient(circle at 88% 82%,rgba(18,214,197,.16),transparent 48%),var(--navy);color:#f2f2fa;}
+.hidden{display:none!important;}
+.card{background:var(--card-light);backdrop-filter:blur(16px);border:1px solid var(--border-light);border-radius:var(--radius);box-shadow:var(--shadow);}
+body.theme-dark .card{background:var(--card-dark);border-color:var(--border-dark);box-shadow:0 20px 50px rgba(0,0,0,.4);}
+.btn{border:none;border-radius:14px;padding:11px 18px;font-weight:700;font-size:.88rem;cursor:pointer;transition:.18s;}
+.btn:active{transform:scale(.96);}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#241703;box-shadow:0 8px 20px rgba(245,166,35,.35);}
+.btn-teal{background:linear-gradient(135deg,var(--teal),var(--teal-2));color:#fff;box-shadow:0 8px 20px rgba(0,184,169,.3);}
+.btn-ghost{background:rgba(24,20,45,.06);color:inherit;}
+body.theme-dark .btn-ghost{background:rgba(255,255,255,.08);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-sm{padding:6px 12px;font-size:.72rem;border-radius:10px;}
+.btn-icon{background:transparent;border:none;cursor:pointer;font-size:1.05rem;color:inherit;border-radius:50%;padding:7px;}
+.btn-icon:hover{background:rgba(24,20,45,.08);}
+body.theme-dark .btn-icon:hover{background:rgba(255,255,255,.1);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+#app{min-height:100vh;width:100vw;display:flex;align-items:center;justify-content:center;padding:12px 12px 30px;}
+.screen{width:100%;max-width:1240px;display:none;flex-direction:column;animation:rise .4s ease;}
+.screen.active{display:flex;}
+@keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.site-footer{position:fixed;bottom:4px;left:0;right:0;text-align:center;font-size:.68rem;font-weight:600;opacity:.55;color:var(--ink);pointer-events:none;}
+body.theme-dark .site-footer{color:#cfd0e6;}
+
+#intro-splash{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#161327,#211c3f 60%,#0e0c1c);transition:opacity .6s,transform .6s;}
+#intro-splash.closing{opacity:0;transform:scale(1.06);pointer-events:none;}
+.intro-inner{text-align:center;animation:introPop .7s cubic-bezier(.2,1.4,.4,1);}
+@keyframes introPop{0%{opacity:0;transform:scale(.7) translateY(20px);}60%{opacity:1;transform:scale(1.04);}100%{transform:scale(1);}}
+.intro-badge{width:100px;height:100px;margin:0 auto 16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--gold-2),var(--gold) 60%);display:flex;align-items:center;justify-content:center;font-size:3rem;box-shadow:0 0 60px rgba(245,166,35,.5);animation:spin 4s linear infinite;overflow:hidden;}
+@keyframes spin{from{transform:rotate(0);}to{transform:rotate(360deg);}}
+.intro-inner h1{font-family:'Sora',sans-serif;font-weight:800;font-size:2rem;color:#fff;margin-bottom:6px;}
+.intro-inner p{font-size:.85rem;font-weight:600;color:var(--gold-2);}
+.intro-bar{width:200px;height:5px;background:rgba(255,255,255,.15);border-radius:4px;margin:18px auto 0;overflow:hidden;}
+.intro-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-2));width:0%;animation:fill 2.4s linear forwards;}
+@keyframes fill{from{width:0%;}to{width:100%;}}
+
+.welcome-wrap{min-height:calc(100vh - 24px);display:flex;align-items:center;justify-content:center;padding:20px 0;}
+.hero{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:44px 38px;max-width:600px;width:100%;overflow:hidden;}
+.hero::before{content:"🧭";position:absolute;font-size:20rem;opacity:.04;top:-4rem;right:-4rem;transform:rotate(12deg);pointer-events:none;}
+.hero-top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;}
+#hero-logo{display:none;width:56px;height:56px;margin-bottom:10px;align-items:center;justify-content:center;}
+.eyebrow{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:6px;}
+body.theme-dark .eyebrow{color:var(--gold-2);}
+.hero h1{font-size:2.6rem;font-weight:800;margin-bottom:6px;}
+.hero h1 em{font-style:normal;color:var(--gold);border-bottom:3px solid var(--gold);}
+.hero p.sub{font-size:.88rem;color:var(--ink-soft);margin-bottom:16px;max-width:420px;}
+body.theme-dark p.sub{color:#b9bad0;}
+.name-input{width:100%;max-width:340px;padding:13px 16px;border-radius:14px;border:2px solid var(--border-light);background:rgba(255,255,255,.6);font-size:.92rem;outline:none;color:inherit;text-align:center;margin-bottom:12px;}
+.name-input:focus{border-color:var(--gold);}
+body.theme-dark .name-input{background:rgba(255,255,255,.06);border-color:var(--border-dark);}
+.xp-wrap{width:100%;max-width:340px;margin-top:8px;}
+.xp-label{display:flex;justify-content:space-between;font-size:.68rem;margin-bottom:4px;color:var(--ink-soft);font-weight:600;}
+body.theme-dark .xp-label{color:#a9aac4;}
+.xp-track{height:7px;border-radius:4px;background:rgba(24,20,45,.08);overflow:hidden;}
+body.theme-dark .xp-track{background:rgba(255,255,255,.08);}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));width:0%;transition:width .5s;}
+.menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:620px;margin-top:18px;}
+.menu-card{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 12px;border-radius:18px;border:1.5px solid var(--border-light);background:rgba(255,255,255,.55);cursor:pointer;transition:.2s;color:inherit;}
+body.theme-dark .menu-card{background:rgba(255,255,255,.05);border-color:var(--border-dark);}
+.menu-card:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(24,20,45,.16);border-color:var(--gold);}
+.menu-card .mc-icon{font-size:1.6rem;}
+.menu-card .mc-title{font-weight:800;font-size:.8rem;}
+.menu-card .mc-desc{font-size:.62rem;opacity:.7;}
+.menu-card.primary{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#241703;grid-column:span 3;flex-direction:row;padding:16px;}
+@media(max-width:520px){.menu-grid{grid-template-columns:repeat(2,1fr);}.menu-card.primary{grid-column:span 2;}}
+.live-stat{margin-top:16px;font-size:.72rem;display:flex;gap:14px;opacity:.85;}
+.live-stat b{color:var(--gold);}
+body.theme-dark .live-stat b{color:var(--gold-2);}
+
+.quiz-header{padding:10px 18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;}
+.user-badge{background:linear-gradient(135deg,var(--navy),var(--teal));border:1px solid var(--gold);color:#fff;padding:6px 14px 6px 6px;border-radius:24px;font-size:.78rem;font-weight:700;display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;}
+.badge-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#241703;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;}
+.badge-text{display:flex;flex-direction:column;line-height:1.15;text-align:left;}
+.badge-text small{font-size:.55rem;opacity:.8;letter-spacing:.1em;}
+.remaining-chip{background:rgba(24,20,45,.06);padding:5px 14px;border-radius:9px;font-size:.74rem;font-weight:700;}
+body.theme-dark .remaining-chip{background:rgba(255,255,255,.08);}
+.quiz-timer{font-weight:800;font-size:.85rem;padding:6px 14px;border-radius:9px;background:rgba(245,166,35,.15);color:#a36c00;white-space:nowrap;}
+body.theme-dark .quiz-timer{color:var(--gold-2);background:rgba(245,166,35,.12);}
+.quiz-timer.low{background:rgba(239,68,68,.18);color:var(--danger);animation:lbPulse 1s infinite;}
+.quiz-main{display:flex;gap:12px;flex:1;min-height:0;}
+.question-area{flex:3;padding:22px;display:flex;flex-direction:column;}
+.progress-track{height:6px;border-radius:3px;background:rgba(24,20,45,.08);overflow:hidden;margin-bottom:14px;}
+body.theme-dark .progress-track{background:rgba(255,255,255,.08);}
+.progress-fill{height:100%;width:0%;transition:width .3s;background:linear-gradient(90deg,var(--teal),var(--gold));}
+.q-meta{display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;color:var(--ink-soft);margin-bottom:8px;}
+body.theme-dark .q-meta{color:#a9aac4;}
+.q-actions{display:flex;justify-content:center;gap:16px;margin-bottom:10px;}
+.q-action{background:none;border:none;cursor:pointer;font-size:1rem;opacity:.55;}
+.q-action.active{opacity:1;color:var(--gold);}
+#question-text{font-size:1.5rem;font-weight:700;text-align:center;margin-bottom:20px;min-height:64px;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(0,184,169,.07);border-radius:16px;border:1px solid rgba(0,184,169,.14);}
+body.theme-dark #question-text{background:rgba(245,166,35,.07);border-color:rgba(245,166,35,.16);}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;flex:1;align-content:center;}
+.option-btn{display:flex;align-items:center;gap:12px;padding:14px 16px;border:2px solid var(--border-light);background:rgba(255,255,255,.5);border-radius:14px;cursor:pointer;text-align:left;font-size:.9rem;font-weight:600;color:inherit;transition:.15s;}
+body.theme-dark .option-btn{background:rgba(255,255,255,.04);border-color:var(--border-dark);}
+.option-btn:hover{border-color:var(--teal);transform:translateY(-2px);}
+.option-btn .letter{width:28px;height:28px;border-radius:50%;background:rgba(24,20,45,.07);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0;}
+body.theme-dark .option-btn .letter{background:rgba(255,255,255,.1);color:var(--gold-2);}
+.option-btn.selected{background:linear-gradient(135deg,var(--teal),var(--teal-2));color:#fff;border-color:var(--teal);}
+.option-btn.selected .letter{background:rgba(255,255,255,.25);color:#fff;}
+@keyframes shakeX{0%,100%{transform:translateX(0);}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+.option-btn.shake{animation:shakeX .35s ease;}
+.quiz-nav{margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.quiz-nav .btn{width:100%;font-size:.8rem;padding:11px 4px;}
+.finish-full{grid-column:1/-1;margin-top:6px;font-size:.95rem;padding:13px;letter-spacing:.05em;}
+.sidebar{flex:1;padding:16px;overflow-y:auto;}
+.sidebar h3{text-align:center;font-size:.85rem;margin-bottom:10px;font-weight:700;}
+.navigator{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.nav-dot{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:rgba(24,20,45,.07);border-radius:9px;cursor:pointer;font-size:.68rem;font-weight:700;}
+body.theme-dark .nav-dot{background:rgba(255,255,255,.07);}
+.nav-dot.current{background:var(--teal);color:#fff;box-shadow:0 0 0 2px var(--gold);}
+.nav-dot.answered{background:var(--success);color:#fff;}
+.nav-dot.review{background:var(--gold);color:#241703;}
+.nav-dot.unvisited{background:rgba(239,68,68,.18);color:var(--danger);}
+.legend{margin-top:14px;display:flex;flex-direction:column;gap:6px;font-size:.68rem;}
+.legend span{display:flex;align-items:center;gap:7px;}
+.legend div{width:10px;height:10px;border-radius:3px;}
+@media(max-width:860px){.quiz-main{flex-direction:column;}.options-grid{grid-template-columns:1fr;}.sidebar{display:none;}#question-text{font-size:1.15rem;}.hero h1{font-size:1.9rem;}body{overflow-y:auto;}#app{height:auto;min-height:100vh;align-items:flex-start;padding:10px 10px 42px;}}
+
+.result-wrap{padding:34px 30px;text-align:center;display:flex;flex-direction:column;gap:14px;position:relative;max-width:760px;margin:0 auto;}
+.result-title{color:var(--teal);font-size:2.1rem;}
+body.theme-dark .result-title{color:var(--gold-2);}
+.result-name{font-size:1.1rem;font-weight:800;}
+.result-score-row{font-size:1rem;font-weight:800;color:var(--teal);}
+body.theme-dark .result-score-row{color:var(--gold-2);}
+.dot-sep{opacity:.4;margin:0 6px;}
+.badges{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;}
+.badge{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#241703;padding:7px 14px;border-radius:20px;font-size:.72rem;font-weight:800;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media(max-width:700px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:rgba(24,20,45,.04);padding:11px;border-radius:14px;}
+body.theme-dark .stat-card{background:rgba(255,255,255,.05);}
+.stat-card h4{font-size:.66rem;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px;}
+body.theme-dark .stat-card h4{color:#a9aac4;}
+.stat-card p{font-size:1.15rem;font-weight:800;}
+.perf-msg{font-weight:700;color:var(--teal);font-size:.98rem;}
+body.theme-dark .perf-msg{color:var(--gold-2);}
+.stars{font-size:1.6rem;letter-spacing:2px;}
+.result-actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;}
+#confetti-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.confetti-piece{position:absolute;top:-20px;border-radius:2px;animation:confettiFall linear forwards;}
+@keyframes confettiFall{to{transform:translateY(110vh) rotate(540deg);opacity:.2;}}
+
+.review-top{display:flex;justify-content:space-between;align-items:center;padding:12px 4px;margin-bottom:10px;border-bottom:2px solid rgba(245,166,35,.25);}
+.review-wrap{display:flex;gap:12px;flex:1;min-height:0;}
+.review-side{flex:0 0 210px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.filters{display:flex;flex-direction:column;gap:7px;}
+.filters button.active{background:linear-gradient(135deg,var(--teal),var(--teal-2));color:#fff;}
+.review-main{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:9px;}
+.rv-item{padding:14px 16px;border-radius:14px;background:var(--card-light);border-left:5px solid var(--gold);}
+body.theme-dark .rv-item{background:var(--card-dark);}
+.rv-item.correct{border-left-color:var(--success);}
+.rv-item.wrong{border-left-color:var(--danger);}
+.rv-item h4{font-size:.9rem;margin-bottom:6px;}
+.rv-item p{font-size:.8rem;}
+@media(max-width:860px){.review-wrap{flex-direction:column;}}
+
+.rev-top{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;margin-bottom:10px;}
+#revision-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:2px 4px 20px;}
+.rev-card{padding:18px;border-radius:16px;background:var(--card-light);border-left:5px solid var(--success);}
+body.theme-dark .rev-card{background:var(--card-dark);}
+.rev-card h4{font-size:.92rem;margin-bottom:10px;}
+.rev-opt{padding:10px 14px;border-radius:10px;margin-bottom:7px;font-size:.85rem;}
+.rev-opt.correct{background:var(--success);color:#fff;font-weight:700;}
+.rev-opt.disabled{background:rgba(24,20,45,.05);color:var(--ink-soft);}
+body.theme-dark .rev-opt.disabled{background:rgba(255,255,255,.05);color:#a9aac4;}
+
+.lb-wrap{padding:18px;display:flex;flex-direction:column;}
+.lb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+.lb-live{font-size:.68rem;background:rgba(34,197,94,.15);color:var(--success);padding:3px 10px;border-radius:20px;font-weight:800;}
+.lb-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.lb-toolbar input,.lb-toolbar select{padding:8px 12px;border-radius:10px;border:2px solid var(--border-light);background:rgba(255,255,255,.6);font-size:.78rem;color:inherit;}
+body.theme-dark .lb-toolbar input,body.theme-dark .lb-toolbar select{background:rgba(255,255,255,.06);border-color:var(--border-dark);}
+.lb-stats-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.lb-stat-chip{flex:1;min-width:110px;background:rgba(24,20,45,.04);border-radius:14px;padding:10px;text-align:center;}
+body.theme-dark .lb-stat-chip{background:rgba(255,255,255,.05);}
+.lb-stat-chip h4{font-size:1.1rem;font-weight:800;color:var(--teal);}
+body.theme-dark .lb-stat-chip h4{color:var(--gold-2);}
+.lb-stat-chip p{font-size:.62rem;opacity:.7;}
+.podium{display:flex;justify-content:center;align-items:flex-end;gap:12px;height:150px;margin-bottom:16px;}
+.podium-block{color:#fff;width:80px;border-radius:10px 10px 0 0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-weight:800;font-size:.9rem;}
+.rank-1 .podium-block{height:118px;background:var(--lb-top1);width:98px;}
+.rank-2 .podium-block{height:82px;background:var(--lb-top2);}
+.rank-3 .podium-block{height:58px;background:var(--lb-top3);}
+.podium-name{font-size:.82rem;font-weight:700;margin-top:5px;text-align:center;}
+.podium-score{font-size:.72rem;color:var(--success);font-weight:700;text-align:center;}
+.lb-list{flex:1;overflow-y:auto;background:rgba(24,20,45,.04);border-radius:16px;padding:8px;}
+body.theme-dark .lb-list{background:rgba(255,255,255,.05);}
+.lb-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;font-size:.85rem;margin-bottom:4px;cursor:pointer;}
+.lb-row:hover{background:rgba(24,20,45,.05);}
+body.theme-dark .lb-row:hover{background:rgba(255,255,255,.06);}
+.lb-row.me{background:linear-gradient(135deg,rgba(0,184,169,.18),rgba(245,166,35,.14));border:1px solid var(--gold);font-weight:800;}
+.lb-rank{width:30px;font-weight:800;text-align:center;}
+.lb-name{flex:1;}
+.lb-mode-tag{font-size:.6rem;padding:2px 8px;border-radius:10px;background:rgba(0,184,169,.15);color:var(--teal);font-weight:700;}
+body.theme-dark .lb-mode-tag{color:var(--gold-2);background:rgba(245,166,35,.12);}
+.lb-score{font-weight:800;color:var(--success);width:70px;text-align:right;}
+.daily-list{background:rgba(24,20,45,.04);border-radius:16px;padding:10px;flex:1;overflow-y:auto;}
+body.theme-dark .daily-list{background:rgba(255,255,255,.05);}
+.daily-row{display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(24,20,45,.06);font-size:.85rem;}
+body.theme-dark .daily-row{border-color:rgba(255,255,255,.06);}
+@keyframes lbPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,.55);}50%{box-shadow:0 0 22px 6px rgba(245,166,35,.55);}}
+.lb-animate{animation:lbPulse 1.8s ease-in-out infinite;}
+
+/* ===== WORLD / DIRECT CHAT ===== */
+.chat-tabs{display:flex;gap:8px;margin-bottom:10px;}
+.chat-tabs button.active{background:linear-gradient(135deg,var(--teal),var(--teal-2));color:#fff;}
+.dm-user-list{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;margin-bottom:10px;}
+.dm-user-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:10px;background:rgba(24,20,45,.05);cursor:pointer;font-size:.8rem;}
+body.theme-dark .dm-user-row{background:rgba(255,255,255,.06);}
+.dm-user-row:hover{border:1px solid var(--gold);}
+#dm-active-label{font-size:.78rem;font-weight:700;margin-bottom:6px;}
+#chat-messages{scroll-behavior:smooth;}
+.chat-msg{position:relative;max-width:78%;padding:10px 30px 10px 14px;border-radius:16px;font-size:.85rem;background:rgba(24,20,45,.05);align-self:flex-start;word-break:break-word;}
+body.theme-dark .chat-msg{background:rgba(255,255,255,.06);}
+.chat-msg.me{align-self:flex-end;background:linear-gradient(135deg,var(--teal),var(--teal-2));color:#fff;}
+.chat-msg b{display:block;font-size:.66rem;opacity:.85;margin-bottom:2px;letter-spacing:.03em;}
+.chat-msg .del-msg{position:absolute;top:5px;right:6px;background:none;border:none;cursor:pointer;font-size:.7rem;opacity:.65;color:inherit;}
+.chat-msg img.chat-img{max-width:180px;border-radius:10px;margin-top:6px;display:block;}
+.chat-file-link{display:inline-block;margin-top:6px;font-size:.75rem;text-decoration:underline;color:inherit;}
+.chat-attach-btn{background:rgba(24,20,45,.08);border:none;border-radius:12px;padding:0 14px;cursor:pointer;font-size:1.1rem;}
+body.theme-dark .chat-attach-btn{background:rgba(255,255,255,.08);}
+
+.modal{position:fixed;inset:0;background:rgba(24,20,45,.55);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);padding:18px;}
+.modal-box{background:var(--parchment);color:var(--ink);padding:24px;border-radius:22px;text-align:center;max-width:460px;width:100%;max-height:88vh;overflow-y:auto;}
+body.theme-dark .modal-box{background:#1c1838;color:#f2f2fa;}
+.modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.mode-options{display:flex;flex-direction:column;gap:12px;margin-top:16px;}
+.mode-opt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px;border-radius:16px;border:2px solid var(--border-light);background:rgba(24,20,45,.03);cursor:pointer;color:inherit;}
+body.theme-dark .mode-opt{border-color:var(--border-dark);background:rgba(255,255,255,.04);}
+.mode-opt:hover{border-color:var(--teal);}
+.mode-opt-icon{font-size:1.6rem;}
+.mode-opt-title{font-weight:800;font-size:.95rem;}
+.mode-opt-sub{font-size:.72rem;opacity:.7;}
+.pass-input{width:100%;padding:14px;font-size:1.4rem;text-align:center;letter-spacing:.3em;border:2px solid var(--gold);border-radius:14px;margin-top:12px;}
+
+.verify-box{max-width:520px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:14px;}
+.verify-row{display:flex;gap:10px;}
+.verify-row .name-input{max-width:none;flex:1;text-transform:uppercase;}
+.verify-result{padding:16px;border-radius:16px;background:rgba(24,20,45,.04);font-size:.88rem;display:none;}
+body.theme-dark .verify-result{background:rgba(255,255,255,.05);}
+.verify-result.show{display:block;}
+.verify-result.not-found{color:var(--danger);font-weight:700;text-align:center;}
+.verify-result dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;}
+.verify-result dt{opacity:.65;}
+.verify-result dd{font-weight:700;}
+
+.drawer{position:fixed;top:0;right:-340px;width:320px;height:100vh;background:var(--parchment);box-shadow:-6px 0 30px rgba(0,0,0,.2);z-index:1500;transition:right .35s;overflow-y:auto;padding:20px;}
+body.theme-dark .drawer{background:var(--navy-2);color:#f2f2fa;}
+.drawer.open{right:0;}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1400;opacity:0;pointer-events:none;transition:.25s;}
+.drawer-overlay.active{opacity:1;pointer-events:auto;}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border-light);}
+body.theme-dark .drawer-head{border-color:var(--border-dark);}
+.drawer-actions{display:flex;flex-direction:column;gap:9px;margin-top:6px;}
+.coin-box{margin-top:16px;text-align:center;font-size:.8rem;color:var(--teal);font-weight:700;}
+body.theme-dark .coin-box{color:var(--gold-2);}
+
+/* ===== ADMIN ===== */
+.admin-top{display:flex;justify-content:space-between;align-items:center;padding:12px 4px;margin-bottom:10px;}
+.admin-layout{display:flex;gap:14px;flex:1;min-height:0;}
+.admin-panel{flex:1;overflow-y:auto;padding-right:4px;}
+.admin-cats{flex:0 0 200px;padding:14px;display:flex;flex-direction:column;gap:6px;}
+.admin-cat-btn{display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:12px;border:none;background:rgba(24,20,45,.05);text-align:left;font-size:.8rem;font-weight:700;cursor:pointer;color:inherit;}
+body.theme-dark .admin-cat-btn{background:rgba(255,255,255,.06);}
+.admin-cat-btn.active{background:linear-gradient(135deg,var(--teal),var(--teal-2));color:#fff;}
+.admin-section{padding:18px;margin-bottom:14px;}
+.admin-section h3{font-size:.98rem;margin-bottom:12px;color:var(--teal);}
+body.theme-dark .admin-section h3{color:var(--gold-2);}
+.admin-field{margin-bottom:12px;}
+.admin-field label{display:block;font-size:.76rem;font-weight:700;margin-bottom:5px;opacity:.85;}
+.admin-field input[type=text],.admin-field select{width:100%;padding:10px 13px;border-radius:10px;border:2px solid var(--border-light);background:rgba(255,255,255,.6);color:inherit;font-size:.84rem;}
+body.theme-dark .admin-field input,body.theme-dark .admin-field select{background:rgba(255,255,255,.06);border-color:var(--border-dark);}
+.admin-field input[type=color]{width:70px;height:38px;border-radius:10px;border:2px solid var(--border-light);cursor:pointer;padding:2px;}
+.color-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+.icon-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:6px;}
+.icon-opt{padding:12px 6px;border-radius:12px;border:2px solid var(--border-light);background:rgba(24,20,45,.03);cursor:pointer;text-align:center;font-size:1.3rem;}
+body.theme-dark .icon-opt{border-color:var(--border-dark);background:rgba(255,255,255,.04);}
+.icon-opt.active{border-color:var(--gold);background:rgba(245,166,35,.15);}
+.admin-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;}
+@media(max-width:700px){.admin-stats-grid{grid-template-columns:repeat(2,1fr);}.admin-layout{flex-direction:column;}.admin-cats{flex-direction:row;flex-wrap:wrap;flex:none;}}
+.admin-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;font-size:.8rem;background:rgba(24,20,45,.04);margin-bottom:6px;}
+body.theme-dark .admin-row{background:rgba(255,255,255,.05);}
+.admin-row .col{flex:1;}
+.danger-box{border:2px dashed var(--danger);border-radius:16px;padding:16px;}
+.sig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;max-height:280px;overflow-y:auto;padding-right:4px;}
+.sig-opt{padding:12px 6px;border-radius:12px;border:2px solid var(--border-light);background:rgba(24,20,45,.03);cursor:pointer;text-align:center;font-size:1.25rem;color:#161327;}
+body.theme-dark .sig-opt{border-color:var(--border-dark);background:rgba(255,255,255,.04);color:#fff;}
+.sig-opt.active{border-color:var(--gold);background:rgba(245,166,35,.18);}
+.file-drop{border:2px dashed var(--border-light);border-radius:12px;padding:14px;text-align:center;font-size:.78rem;cursor:pointer;}
+body.theme-dark .file-drop{border-color:var(--border-dark);}
+.file-drop:hover{border-color:var(--gold);}
+.file-preview{display:block;max-width:130px;max-height:90px;object-fit:contain;margin-top:8px;border-radius:8px;background:rgba(0,0,0,.05);}
+.sig-canvas-wrap{border:2px dashed var(--border-light);border-radius:12px;background:#fff;touch-action:none;width:100%;max-width:400px;height:140px;}
+
+/* ===== CERTIFICATE ===== */
+.cert-preview-wrap{width:100%;aspect-ratio:297/210;position:relative;overflow:hidden;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.3);background:#fffdf6;margin-top:8px;}
+#cert-preview-mount{position:absolute;inset:0;}
+.cert-preview-clone{position:absolute!important;left:0!important;top:0!important;transform-origin:top left;}
+.certificate-area-base{position:absolute;left:-9999px;top:0;width:297mm;height:210mm;background:#fffdf6;color:#181828;display:flex;overflow:hidden;}
+.cert-border{position:absolute;inset:14px;border:2px solid #f5a623;pointer-events:none;}
+.cert-border::before{content:"";position:absolute;inset:8px;border:1px solid #f5a623;}
+.cert-corner{position:absolute;width:46px;height:46px;border:3px solid #00b8a9;opacity:.7;}
+.cert-corner.tl{top:22px;left:22px;border-right:none;border-bottom:none;}
+.cert-corner.tr{top:22px;right:22px;border-left:none;border-bottom:none;}
+.cert-corner.bl{bottom:22px;left:22px;border-right:none;border-top:none;}
+.cert-corner.br{bottom:22px;right:22px;border-left:none;border-top:none;}
+.cert-watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:15rem;opacity:.05;pointer-events:none;display:flex;align-items:center;justify-content:center;}
+.cert-body{position:relative;z-index:2;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 60px;}
+.cert-body h1{font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:700;margin:6px 0 2px;}
+.cert-eyebrow{font-size:.85rem;letter-spacing:.35em;text-transform:uppercase;font-weight:700;}
+.cert-lead{font-size:1rem;color:#5b6672;}
+.cert-name{font-family:'Playfair Display',serif;font-weight:900;font-size:2.5rem;color:#161327;margin:10px 0 2px;}
+.cert-sub{font-size:1rem;color:#5b6672;}
+.cert-quiz{font-size:1.3rem;font-weight:700;margin-top:4px;}
+.cert-mode-tag{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a3216b;margin-top:2px;}
+.cert-stats{display:flex;gap:32px;margin:12px 0 4px;font-size:1.0rem;font-weight:700;}
+.cert-stars{font-size:1.3rem;letter-spacing:4px;margin-bottom:6px;}
+.cert-tier-name{font-size:.85rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;padding:3px 14px;border-radius:20px;display:inline-block;}
+.cert-date{font-size:.8rem;color:#5b6672;margin-bottom:2px;}
+.cert-verify-note{font-size:.68rem;color:#1d5fbf;font-weight:600;margin-bottom:8px;max-width:520px;}
+.cert-footer{display:flex;justify-content:space-between;align-items:flex-end;width:100%;max-width:660px;margin-top:14px;}
+.cert-sign-col{text-align:left;}
+.cert-signature{font-family:'Great Vibes',cursive;font-size:2.1rem;color:#161327;line-height:1;margin-bottom:2px;display:inline-block;transform:rotate(-2deg);}
+.cert-sign-line{border-top:1.5px solid #181828;padding-top:4px;width:190px;font-weight:700;font-size:.72rem;margin-top:2px;}
+.cert-stamp-col{text-align:center;position:relative;}
+.cert-seal{width:104px;height:104px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;text-align:center;box-shadow:0 0 0 4px #fffdf6;position:relative;}
+.cert-seal::before{content:"";position:absolute;inset:5px;border-radius:50%;border:2px dashed currentColor;opacity:.6;}
+.cert-seal::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid currentColor;opacity:.35;}
+.cert-seal .seal-icon{font-size:1.7rem;margin-bottom:1px;}
+.cert-seal .seal-brand{font-size:.5rem;letter-spacing:.1em;line-height:1.1;}
+.cert-seal .seal-sub{font-size:.44rem;letter-spacing:.14em;opacity:.9;margin-top:1px;}
+.cert-ribbon{width:0;height:0;position:absolute;left:50%;top:100%;transform:translateX(-50%);border-left:16px solid transparent;border-right:16px solid transparent;border-top:22px solid currentColor;opacity:.85;}
+.cert-owner-caption{font-size:.6rem;color:#5b6672;margin-top:12px;font-weight:600;}
+.cert-id{margin-top:10px;font-size:.68rem;color:#8b93a0;font-weight:700;}
+.cert-trophy{font-size:2.4rem;margin-bottom:2px;}
+
+#toast-stack{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{background:linear-gradient(135deg,var(--teal),var(--teal-2));color:#fff;padding:11px 22px;border-radius:30px;font-weight:700;font-size:.85rem;box-shadow:0 6px 18px rgba(0,0,0,.25);}
+
+/* ===== GLOBAL SELECT/COPY LOCK (except World Chat) ===== */
+*{-webkit-user-select:none;user-select:none;}
+input,textarea{-webkit-user-select:text;user-select:text;}
+#worldchat-screen, #worldchat-screen *{-webkit-user-select:text!important;user-select:text!important;}
+
+@media print{
+  body:not(.printing-result) *{visibility:hidden;}
+  body:not(.printing-result) #certificate-area,body:not(.printing-result) #certificate-area *{visibility:visible;}
+  body:not(.printing-result) #certificate-area{position:absolute;left:0;top:0;width:297mm;height:210mm;margin:0;padding:0;}
+  body.printing-result *{visibility:hidden;}
+  body.printing-result #result-screen,body.printing-result #result-screen *{visibility:visible;}
+  body.printing-result #result-screen{position:absolute;left:0;top:0;width:100%;margin:0;padding:16px;}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  @page{margin:10mm;}
+}
+</style>
+</head>
+<body class="theme-light" oncontextmenu="return handleContextMenu(event)">
+
+<div id="intro-splash">
+  <div class="intro-inner">
+    <div class="intro-badge" id="intro-badge">🧭</div>
+    <h1>Capital Compass</h1>
+    <p>Made by Muhammad Zeeshan</p>
+    <div class="intro-bar"><div class="intro-bar-fill"></div></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div id="modal-warning" class="modal hidden"><div class="modal-box">
+  <h2>⚠️ Heads up</h2>
+  <p id="warning-text" style="margin-top:8px;font-size:.9rem;">Tab switching isn't allowed during the quiz.</p>
+  <div class="modal-actions"><button class="btn btn-gold" onclick="closeModal('modal-warning')">Got it</button></div>
+</div></div>
+
+<div id="modal-confirm-finish" class="modal hidden"><div class="modal-box">
+  <h2>Submit your answers?</h2>
+  <p style="margin-top:8px;font-size:.9rem;">You won't be able to change them after this.</p>
+  <div class="modal-actions">
+    <button class="btn btn-danger" onclick="finishQuiz()">Yes, finish</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-confirm-finish')">Keep going</button>
+  </div>
+</div></div>
+
+<div id="modal-mode" class="modal hidden"><div class="modal-box">
+  <h2 id="mode-modal-title">Choose a mode</h2>
+  <p style="font-size:.85rem;margin-top:6px;opacity:.8;">Pick which direction you'd like to be quizzed on.</p>
+  <div class="mode-options">
+    <button class="mode-opt" id="mode-capital-btn"><span class="mode-opt-icon">🏛️</span><span class="mode-opt-title">Capital of Countries</span><span class="mode-opt-sub">See a country, name its capital</span></button>
+    <button class="mode-opt" id="mode-country-btn"><span class="mode-opt-icon">🌍</span><span class="mode-opt-title">Country of Capitals</span><span class="mode-opt-sub">See a capital, name its country</span></button>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-mode')">Cancel</button></div>
+</div></div>
+
+<div id="modal-info" class="modal hidden"><div class="modal-box">
+  <h2>📖 About Capital Compass</h2>
+  <div style="text-align:left;font-size:.85rem;margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+    <p>· 200 capitals in the bank, 30 questions drawn each round</p>
+    <p>· You have 10 minutes on the clock for each quiz</p>
+    <p>· Two modes: Capital of Countries &amp; Country of Capitals</p>
+    <p>· Switching tabs 3 times ends the quiz early</p>
+    <p>· Earn XP, coins, badges and a verifiable numbered certificate</p>
+    <p>· Chat live with everyone in World Chat, or message someone privately</p>
+  </div>
+  <div class="modal-actions"><button class="btn btn-gold" onclick="closeModal('modal-info')">Got it</button></div>
+</div></div>
+
+<div id="modal-cert-view" class="modal hidden"><div class="modal-box" style="max-width:920px;padding:18px;">
+  <h2 style="margin-bottom:4px;">🎓 Your Certificate</h2>
+  <p style="font-size:.75rem;opacity:.7;">This is exactly what your downloaded certificate will look like.</p>
+  <div class="cert-preview-wrap"><div id="cert-preview-mount"></div></div>
+  <div class="modal-actions">
+    <button class="btn btn-gold" id="cert-download-btn">⬇️ Download Certificate</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-cert-view')">Close</button>
+  </div>
+</div></div>
+
+<div id="modal-lb-profile" class="modal hidden"><div class="modal-box">
+  <h2 id="lbp-name">Player</h2>
+  <div id="lbp-details" style="text-align:left;font-size:.85rem;margin-top:10px;"></div>
+  <div class="modal-actions">
+    <button class="btn btn-gold" id="lbp-view-btn">🎓 View Certificate</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-lb-profile')">Close</button>
+  </div>
+</div></div>
+
+<div id="modal-admin-login" class="modal hidden"><div class="modal-box">
+  <h2>🔐 Admin Access</h2>
+  <p style="font-size:.85rem;margin-top:8px;opacity:.8;">Enter the admin password to continue.</p>
+  <input type="password" id="admin-pass-input" class="pass-input" maxlength="10" placeholder="•••••">
+  <p id="admin-pass-error" style="color:var(--danger);font-size:.78rem;margin-top:8px;display:none;">Incorrect password. Try again.</p>
+  <div class="modal-actions">
+    <button class="btn btn-gold" id="admin-pass-submit">Unlock</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-admin-login')">Cancel</button>
+  </div>
+</div></div>
+
+<div id="modal-reset-confirm" class="modal hidden"><div class="modal-box">
+  <h2>⚠️ Reset the whole website?</h2>
+  <p style="font-size:.85rem;margin-top:8px;">This deletes the global leaderboard, history and certificates for everyone. A backup is saved automatically so you can <b>Undo</b> once.</p>
+  <div class="modal-actions">
+    <button class="btn btn-danger" id="reset-confirm-btn">Yes, reset (backup kept)</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-reset-confirm')">Cancel</button>
+  </div>
+</div></div>
+
+<div id="modal-undo-confirm" class="modal hidden"><div class="modal-box">
+  <h2>↩️ Undo last reset?</h2>
+  <p style="font-size:.85rem;margin-top:8px;">This restores the leaderboard, history and certificates exactly as they were before the last reset.</p>
+  <div class="modal-actions">
+    <button class="btn btn-teal" id="undo-confirm-btn">Yes, restore everything</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-undo-confirm')">Cancel</button>
+  </div>
+</div></div>
+
+<div id="modal-permanent-confirm" class="modal hidden"><div class="modal-box">
+  <h2>☠️ Permanently delete everything?</h2>
+  <p style="font-size:.85rem;margin-top:8px;font-weight:800;color:var(--danger);">This CANNOT be undone. No backup will be kept — leaderboard, history and certificates are gone forever.</p>
+  <div class="modal-actions">
+    <button class="btn btn-danger" id="permanent-confirm-btn">Yes, delete forever</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-permanent-confirm')">Cancel</button>
+  </div>
+</div></div>
+
+<div id="modal-custom-finish" class="modal hidden"><div class="modal-box">
+  <h2>🎓 Instant Finish</h2>
+  <p style="font-size:.85rem;margin-top:8px;">Pick the completion date &amp; time, then confirm to instantly finish this quiz with a full score at that time.</p>
+  <input type="datetime-local" id="custom-finish-datetime" class="name-input" style="max-width:none;margin-top:14px;">
+  <div class="modal-actions">
+    <button class="btn btn-gold" id="custom-finish-confirm-btn">✅ Confirm &amp; Finish</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-custom-finish')">Cancel</button>
+  </div>
+</div></div>
+
+<!-- SETTINGS DRAWER -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="toggleDrawer()"></div>
+<aside class="drawer" id="settings-drawer">
+  <div class="drawer-head"><h2 style="font-size:1.1rem;">⚙️ Settings</h2><button class="btn-icon" onclick="toggleDrawer()">✖</button></div>
+  <div class="drawer-actions">
+    <button id="theme-toggle-drawer" class="btn btn-ghost">🌙 Toggle theme</button>
+    <button id="admin-open-btn" class="btn btn-teal">🛠️ Admin Panel</button>
+    <button id="export-json" class="btn btn-ghost">📥 Export my data (JSON)</button>
+  </div>
+  <div class="coin-box" id="coin-stats"></div>
+</aside>
+
+<div id="app">
+  <section id="welcome-screen" class="screen active">
+    <div class="welcome-wrap">
+      <div class="hero card">
+        <div class="hero-top">
+          <button id="settings-btn" class="btn-icon" title="Settings">⚙️</button>
+          <button id="theme-toggle" class="btn-icon" title="Toggle theme">🌙</button>
+        </div>
+        <div id="hero-logo"></div>
+        <div class="eyebrow">30 questions · 10 minutes · one attempt</div>
+        <h1>Capital <em>Compass</em></h1>
+        <p class="sub">A professional geography assessment. Test your knowledge of the world's 200 national capitals and earn a verifiable, numbered certificate.</p>
+        <input type="text" id="user-name" class="name-input" placeholder="Enter your name to begin" maxlength="30">
+        <div class="xp-wrap">
+          <div class="xp-label"><span id="xp-level-text">Level 1</span><span id="xp-progress-text">0 / 100 XP</span></div>
+          <div class="xp-track"><div id="xp-bar" class="xp-fill"></div></div>
+        </div>
+        <div class="menu-grid">
+          <button class="menu-card primary" id="start-btn"><span class="mc-icon">🧭</span><span class="mc-title">Start Quiz</span></button>
+          <button class="menu-card" id="leaderboard-btn"><span class="mc-icon">🏆</span><span class="mc-title">Leaderboard</span><span class="mc-desc">Global top scores</span></button>
+          <button class="menu-card" id="history-btn"><span class="mc-icon">📊</span><span class="mc-title">History</span><span class="mc-desc">Your last 24 hours</span></button>
+          <button class="menu-card" id="revision-btn"><span class="mc-icon">📚</span><span class="mc-title">Revision</span><span class="mc-desc">Study all 200 capitals</span></button>
+          <button class="menu-card" id="verify-btn"><span class="mc-icon">🎓</span><span class="mc-title">Certificates</span><span class="mc-desc">Check a certificate</span></button>
+          <button class="menu-card" id="info-btn"><span class="mc-icon">ℹ️</span><span class="mc-title">About / Help</span><span class="mc-desc">How it works</span></button>
+          <button class="menu-card" id="worldchat-btn"><span class="mc-icon">💬</span><span class="mc-title">World Chat</span><span class="mc-desc">Talk to players live</span></button>
+        </div>
+        <div class="live-stat"><span>👥 <b id="live-today">0</b> played today</span><span>🎓 <b id="live-certs">0</b> certificates issued</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="quiz-screen" class="screen">
+    <header class="quiz-header card">
+      <span id="user-display" class="user-badge" title="psst..."></span>
+      <div id="quiz-timer" class="quiz-timer">⏱ 10:00</div>
+      <div id="remaining-chip" class="remaining-chip">29 questions left</div>
+    </header>
+    <div class="quiz-main">
+      <div class="question-area card">
+        <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+        <div class="q-meta"><span id="question-counter">Question 1 / 30</span></div>
+        <div class="q-actions"><button class="q-action" id="bookmark-btn" title="Bookmark">🔖</button></div>
+        <h2 id="question-text">Loading…</h2>
+        <div id="options-container" class="options-grid"></div>
+        <div class="quiz-nav">
+          <button id="prev-btn" class="btn btn-ghost">← Prev</button>
+          <button id="skip-btn" class="btn btn-ghost">Skip ⏭</button>
+          <button id="next-btn" class="btn btn-teal">Next →</button>
+          <button id="finish-btn" class="btn btn-danger finish-full">FINISH QUIZ</button>
+        </div>
+      </div>
+      <aside class="sidebar card scroll-hide">
+        <h3>Navigator</h3>
+        <div id="navigator" class="navigator"></div>
+        <div class="legend">
+          <span><div style="background:var(--teal);"></div>Current</span>
+          <span><div style="background:var(--success);"></div>Answered</span>
+          <span><div style="background:var(--gold);"></div>Bookmarked</span>
+          <span><div style="background:rgba(239,68,68,.5);"></div>Not visited</span>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="result-screen" class="screen">
+    <div class="result-wrap card">
+      <div id="confetti-layer"></div>
+      <h1 class="result-title">🎉 Quiz Completed</h1>
+      <p class="result-name" id="stat-name">-</p>
+      <div class="result-score-row"><span id="stat-score">0/30</span><span class="dot-sep">•</span><span id="stat-percentage">0%</span><span class="dot-sep">•</span><span id="stat-grade">-</span></div>
+      <div id="badges" class="badges"></div>
+      <div class="stats-grid">
+        <div class="stat-card"><h4>Correct</h4><p id="stat-correct" style="color:var(--success);">0</p></div>
+        <div class="stat-card"><h4>Wrong</h4><p id="stat-wrong" style="color:var(--danger);">0</p></div>
+        <div class="stat-card"><h4>Skipped</h4><p id="stat-skipped">0</p></div>
+        <div class="stat-card"><h4>Time Taken</h4><p id="stat-time">0s</p></div>
+      </div>
+      <div class="stats-grid" style="margin-top:2px;">
+        <div class="stat-card"><h4>Mode</h4><p id="stat-mode" style="font-size:.92rem;">-</p></div>
+        <div class="stat-card"><h4>XP Earned</h4><p id="stat-xp" style="color:var(--teal);">+0</p></div>
+        <div class="stat-card"><h4>Coins Earned</h4><p id="stat-coins" style="color:var(--gold);">+0</p></div>
+        <div class="stat-card"><h4>Completed On</h4><p id="stat-date" style="font-size:.78rem;">-</p></div>
+      </div>
+      <p id="perf-msg" class="perf-msg"></p>
+      <div class="stars" id="stars"></div>
+      <div class="result-actions">
+        <button id="certificate-btn" class="btn btn-gold">🎓 Get Certificate</button>
+        <button id="print-btn" class="btn btn-teal">🖨️ Print Result</button>
+        <button id="restart-btn" class="btn btn-danger">↻ Restart</button>
+      </div>
+      <button id="review-btn" class="btn btn-teal" style="margin-top:16px;width:100%;padding:15px;font-size:.95rem;letter-spacing:.03em;">🔍 See All Your Answers</button>
+    </div>
+  </section>
+
+  <section id="review-screen" class="screen">
+    <div class="review-top"><h2>Review answers</h2><button class="btn btn-teal" onclick="switchScreen('result-screen')">Back</button></div>
+    <div class="review-wrap">
+      <div class="review-side card">
+        <input type="text" id="review-search" class="name-input" style="max-width:none;" placeholder="Search a question…">
+        <div class="filters">
+          <button data-filter="all" class="btn btn-ghost active">All</button>
+          <button data-filter="correct" class="btn btn-ghost">Correct</button>
+          <button data-filter="wrong" class="btn btn-ghost">Wrong</button>
+          <button data-filter="skipped" class="btn btn-ghost">Skipped</button>
+        </div>
+      </div>
+      <div class="review-main scroll-hide" id="review-list"></div>
+    </div>
+  </section>
+
+  <section id="revision-screen" class="screen">
+    <div class="rev-top card"><h2>📚 Revision · all 200 capitals</h2><button class="btn btn-teal" onclick="switchScreen('welcome-screen')">Main menu</button></div>
+    <div id="revision-list" class="scroll-hide"></div>
+  </section>
+
+  <section id="leaderboard-screen" class="screen">
+    <div class="lb-wrap card">
+      <div class="lb-head"><h2>🏆 Global Leaderboard <span class="lb-live">LIVE</span></h2><button class="btn btn-ghost" onclick="switchScreen('welcome-screen')">← Back</button></div>
+      <div class="lb-stats-row">
+        <div class="lb-stat-chip"><h4 id="lb-total-players">0</h4><p>Total entries</p></div>
+        <div class="lb-stat-chip"><h4 id="lb-avg-score">0%</h4><p>Average score</p></div>
+        <div class="lb-stat-chip"><h4 id="lb-top-score">0%</h4><p>Top score</p></div>
+        <div class="lb-stat-chip"><h4 id="lb-certs-issued">0</h4><p>Certificates issued</p></div>
+      </div>
+      <div class="lb-toolbar">
+        <input type="text" id="lb-search" placeholder="🔎 Search a name…" style="flex:2;">
+        <select id="lb-mode-filter"><option value="all">All modes</option><option value="capital">Capital of Countries</option><option value="country">Country of Capitals</option></select>
+        <select id="lb-time-filter"><option value="all">All-time</option><option value="week">This week</option><option value="today">Today</option></select>
+        <button id="lb-refresh" class="btn btn-ghost">🔄 Refresh</button>
+      </div>
+      <div id="global-podium" class="podium"></div>
+      <div id="lb-list" class="lb-list scroll-hide"></div>
+    </div>
+  </section>
+
+  <section id="history-screen" class="screen">
+    <div class="lb-wrap card">
+      <div class="lb-head"><h2>📊 Your quiz history <small style="font-size:.6rem;opacity:.7;">(last 24 hours)</small></h2><button class="btn btn-ghost" onclick="switchScreen('welcome-screen')">← Back</button></div>
+      <div id="history-list" class="daily-list scroll-hide" style="flex:1;"></div>
+    </div>
+  </section>
+
+  <section id="verify-screen" class="screen">
+    <div class="lb-wrap card">
+      <div class="lb-head"><h2>🔍 Check a certificate</h2><button class="btn btn-ghost" onclick="switchScreen('welcome-screen')">← Back</button></div>
+      <div class="verify-box">
+        <p style="font-size:.85rem;opacity:.8;">Enter the certificate number printed on any Capital Compass certificate to confirm it's genuine.</p>
+        <div class="verify-row">
+          <input type="text" id="verify-input" class="name-input" placeholder="e.g. CC-4F82A1">
+          <button id="verify-search-btn" class="btn btn-gold">Search</button>
+        </div>
+        <div id="verify-result" class="verify-result"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="worldchat-screen" class="screen">
+    <div class="lb-wrap card" style="min-height:70vh;">
+      <div class="lb-head"><h2>💬 Chat <span class="lb-live">LIVE</span></h2><button class="btn btn-ghost" id="worldchat-back-btn">← Back</button></div>
+      <div id="chat-gate" style="display:flex;flex-direction:column;gap:12px;max-width:360px;margin:30px auto;text-align:center;">
+        <p style="font-size:.85rem;opacity:.8;">Enter your name to join the chat. Everyone online will see your World Chat messages.</p>
+        <input type="text" id="chat-name-input" class="name-input" style="max-width:none;" placeholder="Your name" maxlength="24">
+        <button class="btn btn-gold" id="chat-join-btn">Join Chat →</button>
+      </div>
+      <div id="chat-room" style="display:none;flex-direction:column;flex:1;min-height:0;">
+        <div class="chat-tabs">
+          <button class="btn btn-ghost active" id="tab-world-btn">🌍 World Chat</button>
+          <button class="btn btn-ghost" id="tab-dm-btn">✉️ Direct Messages</button>
+        </div>
+        <div id="dm-panel" style="display:none;">
+          <input type="text" id="dm-search" class="name-input" style="max-width:none;" placeholder="Type a name to message…">
+          <div id="dm-user-list" class="dm-user-list"></div>
+        </div>
+        <div id="dm-active-label" style="display:none;"></div>
+        <div id="chat-messages" class="scroll-hide" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:6px 4px;"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="chat-attach-btn" id="chat-attach-btn" title="Attach photo/file">📎</button>
+          <input type="file" id="chat-file-input" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none;">
+          <input type="text" id="chat-input" class="name-input" style="max-width:none;flex:1;margin-bottom:0;" placeholder="Type a message…" maxlength="300">
+          <button class="btn btn-teal" id="chat-send-btn">Send</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="admin-screen" class="screen">
+    <div class="admin-top card" style="padding:14px 18px;"><h2>🛠️ Admin Panel</h2><button class="btn btn-ghost" onclick="switchScreen('welcome-screen')">← Exit admin</button></div>
+    <div class="admin-layout">
+      <div class="admin-panel scroll-hide" id="admin-panel-mount"></div>
+      <div class="admin-cats card" id="admin-cats-mount"></div>
+    </div>
+  </section>
+</div>
+
+<footer id="site-footer" class="site-footer">This website is made by Muhammad Zeeshan</footer>
+
+<div id="certificate-area" class="certificate-area-base">
+  <div class="cert-border" id="cert-border-el"></div>
+  <div class="cert-corner tl" id="cert-corner-tl"></div><div class="cert-corner tr" id="cert-corner-tr"></div><div class="cert-corner bl" id="cert-corner-bl"></div><div class="cert-corner br" id="cert-corner-br"></div>
+  <div class="cert-watermark" id="cert-watermark">🧭</div>
+  <div class="cert-body">
+    <div class="cert-trophy" id="cert-trophy">🏆</div>
+    <div class="cert-eyebrow" id="cert-eyebrow">Certificate of Achievement</div>
+    <h1>Capital Compass</h1>
+    <span class="cert-tier-name" id="cert-tier-name">Tier</span>
+    <p class="cert-lead">This certifies that</p>
+    <div class="cert-name" id="cert-name">Your Name</div>
+    <p class="cert-sub">has completed the</p>
+    <div class="cert-quiz" id="cert-quiz-title">World Capitals Assessment</div>
+    <div class="cert-mode-tag" id="cert-mode-tag">Capital of Countries</div>
+    <div class="cert-stars" id="cert-stars">⭐⭐⭐⭐⭐</div>
+    <div class="cert-stats">
+      <span>Score <b id="cert-score">0/30</b></span>
+      <span>Percentage <b id="cert-percent">0%</b></span>
+      <span>Grade <b id="cert-grade">A</b></span>
+    </div>
+    <p class="cert-date" id="cert-date">Date</p>
+    <p class="cert-verify-note" id="cert-verify-note">Visit the website and enter the certificate number below to confirm this certificate is real.</p>
+    <div class="cert-footer">
+      <div class="cert-sign-col">
+        <span class="cert-signature" id="cert-signature">Muhammad Zeeshan</span>
+        <img id="cert-signature-img" style="display:none;max-height:60px;max-width:220px;object-fit:contain;">
+        <div class="cert-sign-line" id="cert-sign-title">Quiz Master &amp; Founder</div>
+      </div>
+      <div class="cert-stamp-col">
+        <div class="cert-seal" id="cert-seal">
+          <span class="seal-icon" id="cert-seal-icon">🧭</span>
+          <img id="cert-seal-img" style="display:none;width:34px;height:34px;object-fit:contain;border-radius:50%;">
+          <span class="seal-brand">CAPITAL COMPASS</span>
+          <span class="seal-sub">OFFICIAL SEAL</span>
+          <div class="cert-ribbon" id="cert-ribbon"></div>
+        </div>
+        <p class="cert-owner-caption" id="cert-owner-caption">Owner: Muhammad Zeeshan</p>
+      </div>
+    </div>
+    <p class="cert-id" id="cert-id">Certificate No: CC-000000</p>
+  </div>
+</div>
+
+<div id="toast-stack"></div>
+
+<script>
+'use strict';
+/* ================= FIREBASE ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAxM2R4ji6LMJ9UloRIvokujHNas9yF3Gk",
+  authDomain: "quiz-e8c24.firebaseapp.com",
+  projectId: "quiz-e8c24",
+  storageBucket: "quiz-e8c24.firebasestorage.app",
+  messagingSenderId: "347672198950",
+  appId: "1:347672198950:web:f2224dfc1db3bac3314be7"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const RESULTS_COL = 'results';
+const CERTS_COL = 'certificates';
+const BACKUPS_COL = 'backups';
+const CHAT_COL = 'worldchat';
+const DM_COL = 'privatechats';
+const SETTINGS_DOC = db.collection('settings').doc('global');
+const ADMIN_PASSWORD = '12121'; // change this to your own admin password
+const WORLD_CHAT_MAX_BYTES = 500 * 1024 * 1024; // 500 MB
+const QUIZ_TIME_LIMIT_SECONDS = 600; // 10 minutes
+
+/* ================= DATA ================= */
+const ALL_COUNTRIES = [
+{country:"Afghanistan",capital:"Kabul"},{country:"Albania",capital:"Tirana"},{country:"Algeria",capital:"Algiers"},{country:"Andorra",capital:"Andorra la Vella"},{country:"Angola",capital:"Luanda"},{country:"Argentina",capital:"Buenos Aires"},{country:"Armenia",capital:"Yerevan"},{country:"Australia",capital:"Canberra"},{country:"Austria",capital:"Vienna"},{country:"Azerbaijan",capital:"Baku"},{country:"Bahamas",capital:"Nassau"},{country:"Bahrain",capital:"Manama"},{country:"Bangladesh",capital:"Dhaka"},{country:"Barbados",capital:"Bridgetown"},{country:"Belarus",capital:"Minsk"},{country:"Belgium",capital:"Brussels"},{country:"Belize",capital:"Belmopan"},{country:"Benin",capital:"Porto-Novo"},{country:"Bhutan",capital:"Thimphu"},{country:"Bolivia",capital:"Sucre"},{country:"Bosnia and Herzegovina",capital:"Sarajevo"},{country:"Botswana",capital:"Gaborone"},{country:"Brazil",capital:"Brasília"},{country:"Brunei",capital:"Bandar Seri Begawan"},{country:"Bulgaria",capital:"Sofia"},{country:"Burkina Faso",capital:"Ouagadougou"},{country:"Burundi",capital:"Gitega"},{country:"Cabo Verde",capital:"Praia"},{country:"Cambodia",capital:"Phnom Penh"},{country:"Cameroon",capital:"Yaoundé"},{country:"Canada",capital:"Ottawa"},{country:"Central African Republic",capital:"Bangui"},{country:"Chad",capital:"N'Djamena"},{country:"Chile",capital:"Santiago"},{country:"China",capital:"Beijing"},{country:"Colombia",capital:"Bogotá"},{country:"Comoros",capital:"Moroni"},{country:"Congo (Congo-Brazzaville)",capital:"Brazzaville"},{country:"Costa Rica",capital:"San José"},{country:"Croatia",capital:"Zagreb"},{country:"Cuba",capital:"Havana"},{country:"Cyprus",capital:"Nicosia"},{country:"Czechia",capital:"Prague"},{country:"Denmark",capital:"Copenhagen"},{country:"Djibouti",capital:"Djibouti"},{country:"Dominica",capital:"Roseau"},{country:"Dominican Republic",capital:"Santo Domingo"},{country:"Ecuador",capital:"Quito"},{country:"Egypt",capital:"Cairo"},{country:"El Salvador",capital:"San Salvador"},{country:"Equatorial Guinea",capital:"Malabo"},{country:"Eritrea",capital:"Asmara"},{country:"Estonia",capital:"Tallinn"},{country:"Eswatini",capital:"Mbabane"},{country:"Ethiopia",capital:"Addis Ababa"},{country:"Fiji",capital:"Suva"},{country:"Finland",capital:"Helsinki"},{country:"France",capital:"Paris"},{country:"Gabon",capital:"Libreville"},{country:"Gambia",capital:"Banjul"},{country:"Georgia",capital:"Tbilisi"},{country:"Germany",capital:"Berlin"},{country:"Ghana",capital:"Accra"},{country:"Greece",capital:"Athens"},{country:"Grenada",capital:"St. George's"},{country:"Guatemala",capital:"Guatemala City"},{country:"Guinea",capital:"Conakry"},{country:"Guinea-Bissau",capital:"Bissau"},{country:"Guyana",capital:"Georgetown"},{country:"Haiti",capital:"Port-au-Prince"},{country:"Honduras",capital:"Tegucigalpa"},{country:"Hungary",capital:"Budapest"},{country:"Iceland",capital:"Reykjavik"},{country:"India",capital:"New Delhi"},{country:"Indonesia",capital:"Jakarta"},{country:"Iran",capital:"Tehran"},{country:"Iraq",capital:"Baghdad"},{country:"Ireland",capital:"Dublin"},{country:"Israel",capital:"Jerusalem"},{country:"Italy",capital:"Rome"},{country:"Jamaica",capital:"Kingston"},{country:"Japan",capital:"Tokyo"},{country:"Jordan",capital:"Amman"},{country:"Kazakhstan",capital:"Astana"},{country:"Kenya",capital:"Nairobi"},{country:"Kiribati",capital:"Tarawa"},{country:"Kuwait",capital:"Kuwait City"},{country:"Kyrgyzstan",capital:"Bishkek"},{country:"Laos",capital:"Vientiane"},{country:"Latvia",capital:"Riga"},{country:"Lebanon",capital:"Beirut"},{country:"Lesotho",capital:"Maseru"},{country:"Liberia",capital:"Monrovia"},{country:"Libya",capital:"Tripoli"},{country:"Liechtenstein",capital:"Vaduz"},{country:"Lithuania",capital:"Vilnius"},{country:"Luxembourg",capital:"Luxembourg"},{country:"Madagascar",capital:"Antananarivo"},{country:"Malawi",capital:"Lilongwe"},{country:"Malaysia",capital:"Kuala Lumpur"},{country:"Maldives",capital:"Malé"},{country:"Mali",capital:"Bamako"},{country:"Malta",capital:"Valletta"},{country:"Marshall Islands",capital:"Majuro"},{country:"Mauritania",capital:"Nouakchott"},{country:"Mauritius",capital:"Port Louis"},{country:"Mexico",capital:"Mexico City"},{country:"Micronesia",capital:"Palikir"},{country:"Moldova",capital:"Chisinau"},{country:"Monaco",capital:"Monaco"},{country:"Mongolia",capital:"Ulaanbaatar"},{country:"Montenegro",capital:"Podgorica"},{country:"Morocco",capital:"Rabat"},{country:"Mozambique",capital:"Maputo"},{country:"Myanmar",capital:"Naypyidaw"},{country:"Namibia",capital:"Windhoek"},{country:"Nauru",capital:"Yaren"},{country:"Nepal",capital:"Kathmandu"},{country:"Netherlands",capital:"Amsterdam"},{country:"New Zealand",capital:"Wellington"},{country:"Nicaragua",capital:"Managua"},{country:"Niger",capital:"Niamey"},{country:"Nigeria",capital:"Abuja"},{country:"North Korea",capital:"Pyongyang"},{country:"North Macedonia",capital:"Skopje"},{country:"Norway",capital:"Oslo"},{country:"Oman",capital:"Muscat"},{country:"Pakistan",capital:"Islamabad"},{country:"Palau",capital:"Ngerulmud"},{country:"Palestine",capital:"Ramallah"},{country:"Panama",capital:"Panama City"},{country:"Papua New Guinea",capital:"Port Moresby"},{country:"Paraguay",capital:"Asunción"},{country:"Peru",capital:"Lima"},{country:"Philippines",capital:"Manila"},{country:"Poland",capital:"Warsaw"},{country:"Portugal",capital:"Lisbon"},{country:"Qatar",capital:"Doha"},{country:"Romania",capital:"Bucharest"},{country:"Russia",capital:"Moscow"},{country:"Rwanda",capital:"Kigali"},{country:"Saint Kitts and Nevis",capital:"Basseterre"},{country:"Saint Lucia",capital:"Castries"},{country:"Saint Vincent and the Grenadines",capital:"Kingstown"},{country:"Samoa",capital:"Apia"},{country:"San Marino",capital:"San Marino"},{country:"Sao Tome and Principe",capital:"São Tomé"},{country:"Saudi Arabia",capital:"Riyadh"},{country:"Senegal",capital:"Dakar"},{country:"Serbia",capital:"Belgrade"},{country:"Seychelles",capital:"Victoria"},{country:"Sierra Leone",capital:"Freetown"},{country:"Singapore",capital:"Singapore"},{country:"Slovakia",capital:"Bratislava"},{country:"Slovenia",capital:"Ljubljana"},{country:"Solomon Islands",capital:"Honiara"},{country:"Somalia",capital:"Mogadishu"},{country:"South Africa",capital:"Pretoria"},{country:"South Korea",capital:"Seoul"},{country:"South Sudan",capital:"Juba"},{country:"Spain",capital:"Madrid"},{country:"Sri Lanka",capital:"Sri Jayawardenepura Kotte"},{country:"Sudan",capital:"Khartoum"},{country:"Suriname",capital:"Paramaribo"},{country:"Sweden",capital:"Stockholm"},{country:"Switzerland",capital:"Bern"},{country:"Syria",capital:"Damascus"},{country:"Taiwan",capital:"Taipei"},{country:"Tajikistan",capital:"Dushanbe"},{country:"Tanzania",capital:"Dodoma"},{country:"Thailand",capital:"Bangkok"},{country:"Timor-Leste",capital:"Dili"},{country:"Togo",capital:"Lomé"},{country:"Tonga",capital:"Nuku'alofa"},{country:"Trinidad and Tobago",capital:"Port of Spain"},{country:"Tunisia",capital:"Tunis"},{country:"Turkey",capital:"Ankara"},{country:"Turkmenistan",capital:"Ashgabat"},{country:"Tuvalu",capital:"Funafuti"},{country:"Uganda",capital:"Kampala"},{country:"Ukraine",capital:"Kyiv"},{country:"United Arab Emirates",capital:"Abu Dhabi"},{country:"United Kingdom",capital:"London"},{country:"United States",capital:"Washington, D.C."},{country:"Uruguay",capital:"Montevideo"},{country:"Uzbekistan",capital:"Tashkent"},{country:"Vanuatu",capital:"Port Vila"},{country:"Vatican City",capital:"Vatican City"},{country:"Venezuela",capital:"Caracas"},{country:"Vietnam",capital:"Hanoi"},{country:"Yemen",capital:"Sana'a"},{country:"Zambia",capital:"Lusaka"},{country:"Zimbabwe",capital:"Harare"}
+];
+
+const CERT_TIERS = [
+  {min:0,  max:39,  name:'Tier 1 · Participant',     grad:'linear-gradient(135deg,#b7bcc4,#8b93a0)', text:'#fff'},
+  {min:40, max:49,  name:'Tier 2 · Bronze',           grad:'linear-gradient(135deg,#e0a06b,#b5713a)', text:'#fff'},
+  {min:50, max:59,  name:'Tier 3 · Silver',           grad:'linear-gradient(135deg,#e2e5ec,#a7aebc)', text:'#161327'},
+  {min:60, max:69,  name:'Tier 4 · Gold',             grad:'linear-gradient(135deg,#ffce6d,#f5a623)', text:'#3a2c00'},
+  {min:70, max:79,  name:'Tier 5 · Platinum',         grad:'linear-gradient(135deg,#8ecae6,#219ebc)', text:'#fff'},
+  {min:80, max:89,  name:'Tier 6 · Emerald Scholar',  grad:'linear-gradient(135deg,#57cc99,#00b8a9)', text:'#fff'},
+  {min:90, max:99,  name:'Tier 7 · Diamond Elite',    grad:'linear-gradient(135deg,#b28dff,#6a4cff)', text:'#fff'},
+  {min:100,max:100, name:'Tier 8 · Grandmaster',      grad:'linear-gradient(135deg,#ff5da2,#ffb703)', text:'#3a1c00'}
+];
+function getTier(pct){ return CERT_TIERS.find(t=>pct>=t.min && pct<=t.max) || CERT_TIERS[0]; }
+
+const CERT_BG_PRESETS = [
+  {icon:'🧭', label:'Compass'},{icon:'🌍', label:'World'},{icon:'🗺️', label:'World Map'},{icon:'👑', label:'Crown'},
+  {icon:'✈️', label:'Airplane'},{icon:'🇵🇰', label:'Pakistan'},{icon:'🏆', label:'Trophy'},{icon:'🥇', label:'Medal'},
+  {icon:'⭐', label:'Star'},{icon:'🌐', label:'Globe'},{icon:'📜', label:'Scroll'},{icon:'🛡️', label:'Shield'},
+  {icon:'🏰', label:'Castle'},{icon:'🕐', label:'Clock'},{icon:'☀️', label:'Sun'},{icon:'🎓', label:'Graduate'},
+  {icon:'🦅', label:'Eagle'},{icon:'💎', label:'Diamond'}
+];
+
+const SIGNATURE_FONTS = ['Great Vibes','Dancing Script','Pacifico','Sacramento','Caveat','Satisfy'];
+const SIG_VARIANTS = [
+  {size:'2.1rem',weight:400,rot:-2},{size:'2.4rem',weight:700,rot:0},{size:'1.9rem',weight:400,rot:3},
+  {size:'2.2rem',weight:600,rot:-4},{size:'2.6rem',weight:400,rot:1}
+];
+const SIGNATURE_STYLES = [];
+SIGNATURE_FONTS.forEach(font=>{ SIG_VARIANTS.forEach(v=> SIGNATURE_STYLES.push({font, ...v})); });
+
+let questions = [], userAnswers = {}, bookmarks = new Set();
+let currentIndex = 0, tabViolations = 0;
+let isAdmin = false;
+let xp = +localStorage.getItem('acq_xp') || 0;
+let level = +localStorage.getItem('acq_level') || 1;
+let quizMode = 'capital', quizStartTime = Date.now();
+let cachedResults = [];
+let lastCertRecord = null, lbProfileRecord = null;
+let nameClickTimes = [];
+let chatUnsub = null, dmUnsub = null;
+let chatMode = 'world', currentDMPartner = null, dmKnownUsers = [];
+let quizTimerInterval = null, quizTimeLeft = QUIZ_TIME_LIMIT_SECONDS;
+let customFinishDateTime = null, lastFinishTime = new Date();
+let sigCanvasCtx = null, sigDrawing = false, sigHasDrawing = false;
+let siteSettings = {
+  siteTitle:'Capital Compass', siteLogo:'', footerText:'This website is made by Muhammad Zeeshan', showFooterCredit:true,
+  menuLabels:{start:'Start Quiz', leaderboard:'Leaderboard', history:'History', revision:'Revision', verify:'Certificates', info:'About / Help'},
+  menuButtonColor:'',
+  certLink:'', certAccentColor:'', certTextColor:'', certBackgroundColor:'',
+  certWatermarkIcon:'🧭', certWatermarkImage:'', certStampImage:'',
+  certSignatureName:'Muhammad Zeeshan', certSignatureTitle:'Quiz Master & Founder', certSignatureStyleIndex:0,
+  certSignatureImage:'', certSignatureColor:'#161327',
+  certOwnerName:'Muhammad Zeeshan', certCourseName:'World Capitals Assessment',
+  lbPageSize:100, lbBackgroundColor:'', lbTop1Color:'', lbTop2Color:'', lbTop3Color:'', lbAnimateTop3:false
+};
+let adminCurrentTab = 'overview';
+
+window.onload = function(){
+  loadTheme();
+  applyBranding();
+  updateXPUI();
+  updateCoinStats();
+  bindEvents();
+  refreshGlobalLiveStats();
+  loadSiteSettings();
+  setTimeout(closeIntro, 2400);
+};
+function closeIntro(){
+  const el = document.getElementById('intro-splash');
+  el.classList.add('closing');
+  setTimeout(()=> el.remove(), 650);
+}
+function handleContextMenu(e){
+  if(e.target && e.target.closest && e.target.closest('#worldchat-screen')) return true;
+  return false;
+}
+async function loadSiteSettings(){
+  try{
+    const doc = await SETTINGS_DOC.get();
+    if(doc.exists){
+      const d = doc.data();
+      siteSettings = Object.assign({}, siteSettings, d, {
+        menuLabels: Object.assign({}, siteSettings.menuLabels, d.menuLabels||{})
+      });
+      applyBranding();
+    }
+  }catch(e){}
+}
+function applyBranding(){
+  document.title = siteSettings.siteTitle + ' — World Capitals Quiz';
+  const h1 = document.querySelector('.hero h1');
+  if(h1){
+    const words = (siteSettings.siteTitle||'Capital Compass').trim().split(/\s+/);
+    if(words.length>1){ const last = words.pop(); h1.innerHTML = `${escapeHTML(words.join(' '))} <em>${escapeHTML(last)}</em>`; }
+    else { h1.innerHTML = `<em>${escapeHTML(siteSettings.siteTitle)}</em>`; }
+  }
+  const footerEl = document.getElementById('site-footer');
+  footerEl.style.display = siteSettings.showFooterCredit ? 'block':'none';
+  footerEl.textContent = siteSettings.footerText || 'This website is made by Muhammad Zeeshan';
+  applyMainMenuBranding();
+}
+function applyMainMenuBranding(){
+  const badge = document.getElementById('intro-badge');
+  if(badge){ badge.innerHTML = siteSettings.siteLogo ? `<img src="${siteSettings.siteLogo}" style="width:72%;height:72%;object-fit:contain;border-radius:50%;">` : '🧭'; }
+  const heroLogo = document.getElementById('hero-logo');
+  if(heroLogo){
+    if(siteSettings.siteLogo){ heroLogo.innerHTML = `<img src="${siteSettings.siteLogo}" style="width:56px;height:56px;object-fit:contain;border-radius:50%;">`; heroLogo.style.display='flex'; }
+    else { heroLogo.innerHTML=''; heroLogo.style.display='none'; }
+  }
+  const labels = siteSettings.menuLabels || {};
+  const map = {start:'start-btn', leaderboard:'leaderboard-btn', history:'history-btn', revision:'revision-btn', verify:'verify-btn', info:'info-btn'};
+  Object.keys(map).forEach(k=>{
+    const btn = document.getElementById(map[k]);
+    if(btn && labels[k]){ const t = btn.querySelector('.mc-title'); if(t) t.textContent = labels[k]; }
+  });
+  if(siteSettings.menuButtonColor){
+    document.querySelectorAll('.menu-card:not(.primary)').forEach(c=>{ c.style.borderColor = siteSettings.menuButtonColor; });
+    const primary = document.querySelector('.menu-card.primary');
+    if(primary) primary.style.background = `linear-gradient(135deg, ${siteSettings.menuButtonColor}, ${siteSettings.menuButtonColor}cc)`;
+  }
+}
+function fileToDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+function nameToColor(name){
+  let hash = 0;
+  const s = String(name||'Guest');
+  for(let i=0;i<s.length;i++){ hash = s.charCodeAt(i) + ((hash<<5)-hash); }
+  const hue = Math.abs(hash)%360;
+  return `hsl(${hue},68%,42%)`;
+}
+
+function bindEvents(){
+  document.getElementById('start-btn').onclick = openModeSelect;
+  document.getElementById('theme-toggle').onclick = toggleTheme;
+  document.getElementById('theme-toggle-drawer').onclick = toggleTheme;
+  document.getElementById('settings-btn').onclick = toggleDrawer;
+  document.getElementById('history-btn').onclick = showHistory;
+  document.getElementById('leaderboard-btn').onclick = showLeaderboard;
+  document.getElementById('revision-btn').onclick = () => openModeSelect(true);
+  document.getElementById('verify-btn').onclick = () => { switchScreen('verify-screen'); document.getElementById('verify-result').classList.remove('show'); };
+  document.getElementById('info-btn').onclick = () => openModal('modal-info');
+  document.getElementById('worldchat-btn').onclick = openWorldChat;
+  document.getElementById('worldchat-back-btn').onclick = leaveWorldChat;
+  document.getElementById('chat-join-btn').onclick = joinWorldChat;
+  document.getElementById('chat-name-input').addEventListener('keypress', e=>{ if(e.key==='Enter') joinWorldChat(); });
+  document.getElementById('chat-send-btn').onclick = sendChatMessage;
+  document.getElementById('chat-input').addEventListener('keypress', e=>{ if(e.key==='Enter') sendChatMessage(); });
+  document.getElementById('chat-attach-btn').onclick = ()=> document.getElementById('chat-file-input').click();
+  document.getElementById('chat-file-input').onchange = ()=>{
+    const f = document.getElementById('chat-file-input').files[0];
+    if(f) showToast(`📎 Ready to send: ${f.name}`);
+  };
+  document.getElementById('tab-world-btn').onclick = ()=>{
+    document.getElementById('tab-world-btn').classList.add('active');
+    document.getElementById('tab-dm-btn').classList.remove('active');
+    document.getElementById('dm-panel').style.display='none';
+    document.getElementById('dm-active-label').style.display='none';
+    if(dmUnsub){ dmUnsub(); dmUnsub=null; }
+    startChatListener();
+  };
+  document.getElementById('tab-dm-btn').onclick = async ()=>{
+    document.getElementById('tab-dm-btn').classList.add('active');
+    document.getElementById('tab-world-btn').classList.remove('active');
+    if(chatUnsub){ chatUnsub(); chatUnsub=null; }
+    chatMode = 'dm'; currentDMPartner = null;
+    document.getElementById('dm-panel').style.display='block';
+    document.getElementById('dm-active-label').style.display='none';
+    document.getElementById('chat-messages').innerHTML = '<p style="text-align:center;opacity:.6;font-size:.78rem;">Select someone from the list, or search a name above, to start chatting.</p>';
+    await loadDMUserList();
+  };
+  document.getElementById('dm-search').oninput = renderDMUserList;
+  document.getElementById('mode-capital-btn').onclick = () => chooseMode('capital');
+  document.getElementById('mode-country-btn').onclick = () => chooseMode('country');
+  document.getElementById('verify-search-btn').onclick = handleVerifySearch;
+  document.getElementById('verify-input').addEventListener('keypress', e=>{ if(e.key==='Enter') handleVerifySearch(); });
+
+  document.getElementById('finish-btn').onclick = () => openModal('modal-confirm-finish');
+  document.getElementById('prev-btn').onclick = prevQuestion;
+  document.getElementById('next-btn').onclick = nextQuestion;
+  document.getElementById('skip-btn').onclick = skipQuestion;
+  document.getElementById('bookmark-btn').onclick = toggleBookmark;
+
+  document.getElementById('review-btn').onclick = showReview;
+  document.getElementById('certificate-btn').onclick = generateCertificate;
+  document.getElementById('cert-download-btn').onclick = downloadCertificateImage;
+  document.getElementById('restart-btn').onclick = restartQuiz;
+  document.getElementById('print-btn').onclick = printResultOnly;
+
+  document.getElementById('review-search').oninput = renderReview;
+  document.querySelectorAll('.filters button').forEach(btn=>{
+    btn.onclick = (e)=>{
+      document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('active'));
+      e.target.classList.add('active'); renderReview(e.target.dataset.filter);
+    };
+  });
+
+  document.getElementById('export-json').onclick = exportJSON;
+  document.getElementById('admin-open-btn').onclick = () => { toggleDrawer(); openAdminLogin(); };
+  document.getElementById('admin-pass-submit').onclick = checkAdminPassword;
+  document.getElementById('admin-pass-input').addEventListener('keypress', e=>{ if(e.key==='Enter') checkAdminPassword(); });
+
+  document.getElementById('lb-search').oninput = renderLeaderboardList;
+  document.getElementById('lb-mode-filter').onchange = renderLeaderboardList;
+  document.getElementById('lb-time-filter').onchange = renderLeaderboardList;
+  document.getElementById('lb-refresh').onclick = () => loadLeaderboardData(true);
+  document.getElementById('lbp-view-btn').onclick = viewLbProfileCertificate;
+
+  document.getElementById('reset-confirm-btn').onclick = async ()=>{ closeModal('modal-reset-confirm'); await performSoftReset(); };
+  document.getElementById('undo-confirm-btn').onclick = async ()=>{ closeModal('modal-undo-confirm'); await performUndoReset(); };
+  document.getElementById('permanent-confirm-btn').onclick = async ()=>{ closeModal('modal-permanent-confirm'); await performPermanentReset(); };
+
+  document.getElementById('user-display').addEventListener('click', handleNameBadgeClick);
+  document.getElementById('custom-finish-confirm-btn').onclick = applyCustomFinish;
+
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden && isScreenActive('quiz-screen')) showWarning('Tab switching is not allowed during the quiz.');
+  });
+  window.addEventListener('beforeunload', (e)=>{ if(isScreenActive('quiz-screen')){ e.preventDefault(); e.returnValue=''; } });
+  window.addEventListener('afterprint', ()=> document.body.classList.remove('printing-result'));
+  document.addEventListener('copy', function(e){
+    if(!(e.target && e.target.closest && e.target.closest('#worldchat-screen'))){ e.preventDefault(); }
+  });
+}
+function isScreenActive(id){ return document.getElementById(id).classList.contains('active'); }
+
+function toggleDrawer(){ document.getElementById('settings-drawer').classList.toggle('open'); document.getElementById('drawer-overlay').classList.toggle('active'); }
+function toggleTheme(){
+  const dark = document.body.classList.toggle('theme-dark');
+  document.body.classList.toggle('theme-light', !dark);
+  localStorage.setItem('acq_theme', dark?'dark':'light');
+  document.getElementById('theme-toggle').textContent = dark ? '☀️' : '🌙';
+}
+function loadTheme(){
+  let theme = localStorage.getItem('acq_theme');
+  if(!theme){ theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'; localStorage.setItem('acq_theme', theme); }
+  const dark = theme === 'dark';
+  document.body.classList.toggle('theme-dark', dark);
+  document.body.classList.toggle('theme-light', !dark);
+  document.getElementById('theme-toggle').textContent = dark ? '☀️' : '🌙';
+}
+
+let modeContext = 'quiz';
+function openModeSelect(revision){
+  if(!revision){
+    const name = document.getElementById('user-name').value.trim();
+    if(!name){ showToast('Please enter your name first'); return; }
+  }
+  modeContext = revision===true ? 'revision' : 'quiz';
+  document.getElementById('mode-modal-title').textContent = modeContext==='quiz' ? 'Choose a quiz mode' : 'Choose a revision mode';
+  openModal('modal-mode');
+}
+function chooseMode(mode){
+  quizMode = mode;
+  closeModal('modal-mode');
+  if(modeContext==='quiz') startQuiz(mode); else showRevision(mode);
+}
+
+function buildQuestionObject(q, mode, i){
+  if(mode === 'country'){
+    const wrong = ALL_COUNTRIES.filter(c=>c.country!==q.country).sort(()=>0.5-Math.random()).slice(0,3).map(c=>c.country);
+    const options = [q.country, ...wrong].sort(()=>0.5-Math.random());
+    return {id:i+1, correctAnswer:q.country, options, questionText:`Which country has ${q.capital} as its capital?`};
+  }
+  const wrong = ALL_COUNTRIES.filter(c=>c.capital!==q.capital).sort(()=>0.5-Math.random()).slice(0,3).map(c=>c.capital);
+  const options = [q.capital, ...wrong].sort(()=>0.5-Math.random());
+  return {id:i+1, correctAnswer:q.capital, options, questionText:`What is the capital of ${q.country}?`};
+}
+function buildQuestionSet(mode, count){
+  const base = [...ALL_COUNTRIES].sort(()=>0.5-Math.random());
+  return base.slice(0,count).map((q,i)=>buildQuestionObject(q,mode,i));
+}
+function setupUserBadge(name){
+  const initial = (name.trim().charAt(0) || '?').toUpperCase();
+  document.getElementById('user-display').innerHTML = `<span class="badge-avatar">${escapeHTML(initial)}</span><span class="badge-text"><small>PLAYER</small><b>${escapeHTML(name)}</b></span>`;
+}
+
+function startQuiz(mode){
+  const name = document.getElementById('user-name').value.trim();
+  if(!name){ showToast('Please enter your name first'); return; }
+  questions = buildQuestionSet(mode, 30);
+  currentIndex = 0; userAnswers = {}; bookmarks.clear(); tabViolations = 0; nameClickTimes = [];
+  quizStartTime = Date.now();
+  localStorage.setItem('acq_last_name', name);
+  setupUserBadge(name);
+  switchScreen('quiz-screen'); renderQuestion();
+  startQuizTimer();
+  playTone(700);
+}
+
+/* ===== QUIZ TIMER ===== */
+function startQuizTimer(){
+  clearInterval(quizTimerInterval);
+  quizTimeLeft = QUIZ_TIME_LIMIT_SECONDS;
+  updateQuizTimerUI();
+  quizTimerInterval = setInterval(()=>{
+    quizTimeLeft--;
+    updateQuizTimerUI();
+    if(quizTimeLeft<=0){
+      clearInterval(quizTimerInterval); quizTimerInterval=null;
+      showToast('⏱ Time is up! Submitting your quiz…');
+      finishQuiz();
+    }
+  }, 1000);
+}
+function stopQuizTimer(){ clearInterval(quizTimerInterval); quizTimerInterval=null; }
+function updateQuizTimerUI(){
+  const el = document.getElementById('quiz-timer'); if(!el) return;
+  const m = Math.floor(Math.max(0,quizTimeLeft)/60), s = Math.max(0,quizTimeLeft)%60;
+  el.textContent = `⏱ ${m}:${s<10?'0':''}${s}`;
+  el.classList.toggle('low', quizTimeLeft<=60);
+}
+
+function renderQuestion(){
+  const q = questions[currentIndex]; if(!q) return;
+  document.getElementById('question-counter').textContent = `Question ${q.id} / ${questions.length}`;
+  document.getElementById('remaining-chip').textContent = `${questions.length - q.id} questions left`;
+  document.getElementById('question-text').textContent = q.questionText;
+  document.getElementById('bookmark-btn').classList.toggle('active', bookmarks.has(q.id));
+
+  const box = document.getElementById('options-container'); box.innerHTML='';
+  const letters = ['A','B','C','D'];
+  q.options.forEach((opt,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="letter">${letters[i]}</span><span>${escapeHTML(opt)}</span>`;
+    if(userAnswers[q.id]===opt) btn.classList.add('selected');
+    btn.onclick = ()=> selectAnswer(q.id, opt, btn);
+    box.appendChild(btn);
+  });
+  document.getElementById('prev-btn').disabled = currentIndex===0;
+  updateProgress(); updateNavigator();
+}
+function selectAnswer(qId, answer, btnEl){
+  const wasAnswered = userAnswers[qId] !== undefined;
+  userAnswers[qId] = answer;
+  const q = questions.find(x=>x.id===qId);
+  const correct = q.correctAnswer === answer;
+  if(navigator.vibrate) navigator.vibrate(correct?40:[80,40,80]);
+  if(!correct && !wasAnswered){ btnEl.classList.add('shake'); setTimeout(()=>btnEl.classList.remove('shake'),350); }
+  if(correct && !wasAnswered){ localStorage.setItem('acq_coins', (+localStorage.getItem('acq_coins')||0)+10); }
+  playTone(correct?880:300);
+  renderQuestion();
+}
+function updateProgress(){ document.getElementById('progress-fill').style.width = `${((currentIndex+1)/questions.length)*100}%`; }
+function nextQuestion(){ if(currentIndex<questions.length-1){ currentIndex++; renderQuestion(); } else { openModal('modal-confirm-finish'); } }
+function prevQuestion(){ if(currentIndex>0){ currentIndex--; renderQuestion(); } }
+function skipQuestion(){ delete userAnswers[questions[currentIndex].id]; nextQuestion(); }
+function toggleBookmark(){
+  const id = questions[currentIndex].id;
+  if(bookmarks.has(id)){ bookmarks.delete(id); showToast('Bookmark removed'); } else { bookmarks.add(id); showToast('🔖 Bookmarked'); }
+  document.getElementById('bookmark-btn').classList.toggle('active', bookmarks.has(id));
+  updateNavigator();
+}
+function updateNavigator(){
+  const nav = document.getElementById('navigator'); nav.innerHTML='';
+  questions.forEach((q,i)=>{
+    const dot = document.createElement('div'); dot.className='nav-dot'; dot.textContent=q.id;
+    if(i===currentIndex) dot.classList.add('current');
+    else if(bookmarks.has(q.id)) dot.classList.add('review');
+    else if(userAnswers[q.id]!==undefined) dot.classList.add('answered');
+    else dot.classList.add('unvisited');
+    dot.onclick = ()=>{ currentIndex=i; renderQuestion(); };
+    nav.appendChild(dot);
+  });
+}
+
+/* ===== NAME-CLICK CUSTOM FINISH (10 clicks in 5 seconds) ===== */
+function handleNameBadgeClick(){
+  if(!isScreenActive('quiz-screen')) return;
+  const now = Date.now();
+  nameClickTimes.push(now);
+  nameClickTimes = nameClickTimes.filter(t => now - t <= 5000);
+  if(nameClickTimes.length >= 10){
+    nameClickTimes = [];
+    openCustomFinishModal();
+  }
+}
+function openCustomFinishModal(){
+  const now = new Date();
+  const pad = n=>String(n).padStart(2,'0');
+  const localVal = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  document.getElementById('custom-finish-datetime').value = localVal;
+  openModal('modal-custom-finish');
+}
+function applyCustomFinish(){
+  const val = document.getElementById('custom-finish-datetime').value;
+  if(!val){ showToast('Please pick a date & time'); return; }
+  closeModal('modal-custom-finish');
+  customFinishDateTime = new Date(val);
+  questions.forEach(q=>{ userAnswers[q.id] = q.correctAnswer; });
+  finishQuiz();
+}
+
+function finishQuiz(){
+  closeModal('modal-confirm-finish');
+  stopQuizTimer();
+  playTone(600);
+  let correct=0, wrong=0, skipped=0;
+  questions.forEach(q=>{
+    if(userAnswers[q.id]===undefined) skipped++;
+    else if(userAnswers[q.id]===q.correctAnswer) correct++;
+    else wrong++;
+  });
+  const pct = Math.round((correct/questions.length)*100);
+  const timeTaken = Math.max(0, Math.floor((Date.now()-quizStartTime)/1000));
+  const name = document.getElementById('user-name').value || 'Guest';
+  const finishTime = customFinishDateTime ? customFinishDateTime : new Date();
+  lastFinishTime = finishTime;
+
+  document.getElementById('stat-name').textContent = name;
+  document.getElementById('stat-score').textContent = `${correct}/${questions.length}`;
+  document.getElementById('stat-percentage').textContent = `${pct}%`;
+  document.getElementById('stat-grade').textContent = getGrade(pct);
+  document.getElementById('stat-correct').textContent = correct;
+  document.getElementById('stat-wrong').textContent = wrong;
+  document.getElementById('stat-skipped').textContent = skipped;
+  document.getElementById('stat-time').textContent = `${Math.floor(timeTaken/60)}m ${timeTaken%60}s`;
+  document.getElementById('stat-mode').textContent = quizMode==='country' ? 'Country of Capitals' : 'Capital of Countries';
+  document.getElementById('stat-xp').textContent = '+' + (correct*10);
+  document.getElementById('stat-coins').textContent = '+' + (correct*10);
+  document.getElementById('stat-date').textContent = finishTime.toLocaleString();
+  document.getElementById('perf-msg').textContent = getPerfMessage(pct);
+  renderBadges(pct,timeTaken);
+  renderStars(pct);
+  if(pct>=70) launchConfetti();
+
+  localStorage.setItem('acq_played_count', (+localStorage.getItem('acq_played_count')||0)+1);
+  localStorage.setItem('acq_best_pct', Math.max(+localStorage.getItem('acq_best_pct')||0, pct));
+
+  saveResultToCloud({ name, score:correct, correct, wrong, skipped, percentage:pct, mode:quizMode, timeTaken,
+    dateKey:finishTime.toISOString().split('T')[0], ts:finishTime.getTime() });
+
+  addXP(correct*10); updateCoinStats();
+  customFinishDateTime = null;
+  switchScreen('result-screen'); window.scrollTo(0,0);
+}
+function getGrade(p){ if(p>=90) return 'A+'; if(p>=80) return 'A'; if(p>=70) return 'B'; if(p>=60) return 'C'; if(p>=50) return 'D'; return 'Fail'; }
+function getPerfMessage(p){
+  if(p===100) return '🌟 Perfect score — outstanding!';
+  if(p>=90) return 'Excellent work!';
+  if(p>=80) return 'Very good performance!';
+  if(p>=70) return 'Good job!';
+  if(p>=50) return 'Solid effort — keep practicing.';
+  return "Don't give up — try again!";
+}
+function renderBadges(p,t){
+  const box = document.getElementById('badges'); box.innerHTML='';
+  const list = [];
+  if(p===100) list.push('🏆 Perfect score');
+  if(p>=90) list.push('🥇 Gold medal'); else if(p>=75) list.push('🥈 Silver medal'); else if(p>=50) list.push('🥉 Bronze medal');
+  if(t<=240 && p>=50) list.push('⚡ Speed runner');
+  if(p<50) list.push('💪 Keep going');
+  list.forEach(txt=>{ const s=document.createElement('span'); s.className='badge'; s.textContent=txt; box.appendChild(s); });
+}
+function renderStars(p){ const n = Math.max(1,Math.ceil(p/20)); document.getElementById('stars').textContent = '⭐'.repeat(n)+'☆'.repeat(5-n); }
+function launchConfetti(){
+  const layer = document.getElementById('confetti-layer'); layer.innerHTML='';
+  const colors = ['#f5a623','#ffce6d','#00b8a9','#12d6c5','#ff5da2','#57cc99'];
+  for(let i=0;i<60;i++){
+    const p = document.createElement('div'); p.className='confetti-piece';
+    const size = 6+Math.random()*6;
+    p.style.width = size+'px'; p.style.height=(size*0.4)+'px'; p.style.left = Math.random()*100+'%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (2.2+Math.random()*1.6)+'s'; p.style.animationDelay = (Math.random()*0.6)+'s';
+    layer.appendChild(p);
+  }
+  setTimeout(()=>{ layer.innerHTML=''; }, 4200);
+}
+
+function showReview(){ switchScreen('review-screen'); renderReview('all'); }
+function renderReview(filter){
+  filter = filter || (document.querySelector('.filters button.active')||{}).dataset?.filter || 'all';
+  const search = document.getElementById('review-search').value.toLowerCase();
+  const list = document.getElementById('review-list'); list.innerHTML='';
+  questions.forEach(q=>{
+    const ans = userAnswers[q.id];
+    const status = ans===undefined ? 'skipped' : (ans===q.correctAnswer ? 'correct' : 'wrong');
+    if(filter!=='all' && filter!==status) return;
+    if(search && !q.questionText.toLowerCase().includes(search)) return;
+    const item = document.createElement('div'); item.className = `rv-item ${status}`;
+    item.innerHTML = `<h4>Q${q.id}: ${escapeHTML(q.questionText)}</h4><p><b>Your answer:</b> ${escapeHTML(ans || 'Skipped')}</p><p style="color:var(--success);"><b>Correct answer:</b> ${escapeHTML(q.correctAnswer)}</p>`;
+    list.appendChild(item);
+  });
+  if(!list.children.length) list.innerHTML = '<p style="text-align:center;padding:30px;opacity:.7;">No questions match this filter.</p>';
+}
+
+function showRevision(mode){
+  switchScreen('revision-screen');
+  document.querySelector('#revision-screen .rev-top h2').textContent = mode==='country' ? '📚 Revision · country of each capital' : '📚 Revision · capital of each country';
+  const list = document.getElementById('revision-list'); list.innerHTML='';
+  ALL_COUNTRIES.forEach((c,idx)=>{
+    let questionText, correct, pool;
+    if(mode==='country'){ questionText = `Which country has ${c.capital} as its capital?`; correct = c.country; pool = ALL_COUNTRIES.filter(x=>x.country!==c.country).map(x=>x.country); }
+    else { questionText = `What is the capital of ${c.country}?`; correct = c.capital; pool = ALL_COUNTRIES.filter(x=>x.capital!==c.capital).map(x=>x.capital); }
+    const wrong = pool.sort(()=>0.5-Math.random()).slice(0,3);
+    const options = [correct, ...wrong].sort(()=>0.5-Math.random());
+    const card = document.createElement('div'); card.className='rev-card';
+    let optsHTML='';
+    options.forEach(o=>{ optsHTML += o===correct ? `<div class="rev-opt correct">✔ ${escapeHTML(o)}</div>` : `<div class="rev-opt disabled">${escapeHTML(o)}</div>`; });
+    card.innerHTML = `<h4>${idx+1}. ${escapeHTML(questionText)}</h4>${optsHTML}`;
+    list.appendChild(card);
+  });
+}
+
+function saveResultToCloud(data){
+  db.collection(RESULTS_COL).add(data).then(()=>{ incrementGlobalCounters('totalQuizzes'); refreshGlobalLiveStats(); })
+    .catch(()=> showToast('⚠️ Could not sync to cloud (check your Firebase config / connection)'));
+}
+function incrementGlobalCounters(field){
+  SETTINGS_DOC.set({ [field]: firebase.firestore.FieldValue.increment(1) }, {merge:true}).catch(()=>{});
+  const todayKey = new Date().toISOString().split('T')[0];
+  SETTINGS_DOC.get().then(doc=>{
+    const data = doc.exists ? doc.data() : {};
+    if(data.todayKey !== todayKey) SETTINGS_DOC.set({ todayKey, todayCount:1 }, {merge:true}).catch(()=>{});
+    else SETTINGS_DOC.set({ todayCount: firebase.firestore.FieldValue.increment(1) }, {merge:true}).catch(()=>{});
+  }).catch(()=>{});
+}
+function refreshGlobalLiveStats(){
+  SETTINGS_DOC.get().then(doc=>{
+    const data = doc.exists ? doc.data() : {};
+    const todayKey = new Date().toISOString().split('T')[0];
+    const todayCount = (data.todayKey===todayKey) ? (data.todayCount||0) : 0;
+    document.getElementById('live-today').textContent = todayCount;
+    document.getElementById('live-certs').textContent = data.totalCertificates||0;
+  }).catch(()=>{});
+}
+async function loadResultsCache(limitCount){
+  try{ const snap = await db.collection(RESULTS_COL).orderBy('ts','desc').limit(limitCount||300).get(); cachedResults = snap.docs.map(d=>({id:d.id, ...d.data()})); }
+  catch(err){ showToast('⚠️ Could not load cloud data'); cachedResults = []; }
+  return cachedResults;
+}
+async function showLeaderboard(){ switchScreen('leaderboard-screen'); applyLeaderboardBranding(); await loadLeaderboardData(false); }
+function applyLeaderboardBranding(){
+  const wrap = document.querySelector('#leaderboard-screen .lb-wrap');
+  if(wrap) wrap.style.background = siteSettings.lbBackgroundColor || '';
+  if(siteSettings.lbTop1Color) document.documentElement.style.setProperty('--lb-top1', siteSettings.lbTop1Color);
+  if(siteSettings.lbTop2Color) document.documentElement.style.setProperty('--lb-top2', siteSettings.lbTop2Color);
+  if(siteSettings.lbTop3Color) document.documentElement.style.setProperty('--lb-top3', siteSettings.lbTop3Color);
+}
+async function loadLeaderboardData(forceToast){
+  document.getElementById('lb-list').innerHTML = '<p style="text-align:center;padding:30px;opacity:.7;">Loading global leaderboard…</p>';
+  await loadResultsCache(300);
+  if(forceToast) showToast('🔄 Leaderboard refreshed');
+  renderLeaderboardStats(); renderLeaderboardList();
+}
+function renderLeaderboardStats(){
+  const total = cachedResults.length;
+  const avg = total ? Math.round(cachedResults.reduce((s,r)=>s+(r.percentage||0),0)/total) : 0;
+  const top = total ? Math.max(...cachedResults.map(r=>r.percentage||0)) : 0;
+  document.getElementById('lb-total-players').textContent = total;
+  document.getElementById('lb-avg-score').textContent = avg+'%';
+  document.getElementById('lb-top-score').textContent = top+'%';
+  SETTINGS_DOC.get().then(doc=>{ document.getElementById('lb-certs-issued').textContent = (doc.exists?doc.data().totalCertificates:0)||0; }).catch(()=>{});
+}
+function filteredLeaderboardData(){
+  const search = (document.getElementById('lb-search').value||'').toLowerCase();
+  const modeF = document.getElementById('lb-mode-filter').value;
+  const timeF = document.getElementById('lb-time-filter').value;
+  const now = Date.now();
+  return cachedResults.filter(r=>{
+    if(search && !(r.name||'').toLowerCase().includes(search)) return false;
+    if(modeF!=='all' && r.mode!==modeF) return false;
+    if(timeF==='today' && (now-(r.ts||0))>86400000) return false;
+    if(timeF==='week' && (now-(r.ts||0))>7*86400000) return false;
+    return true;
+  }).sort((a,b)=>(b.percentage||0)-(a.percentage||0));
+}
+function renderLeaderboardList(){
+  const data = filteredLeaderboardData();
+  const myName = (document.getElementById('user-name').value||'').trim().toLowerCase();
+  const podium = document.getElementById('global-podium'); podium.innerHTML='';
+  const top3 = data.slice(0,3);
+  const colorMap = [siteSettings.lbTop1Color, siteSettings.lbTop2Color, siteSettings.lbTop3Color];
+  if(!top3.length){ podium.innerHTML = '<p style="opacity:.7;font-size:.85rem;">No entries yet — be the first to play!</p>'; }
+  else{
+    [1,0,2].forEach(rank=>{
+      const p = top3[rank]; if(!p) return;
+      const div = document.createElement('div'); div.className = `podium-item rank-${rank+1}`;
+      div.innerHTML = `<div class="podium-block">${rank+1}</div><div class="podium-name">${escapeHTML(p.name)}</div><div class="podium-score">${p.percentage}%</div>`;
+      if(colorMap[rank]){ div.querySelector('.podium-block').style.background = colorMap[rank]; }
+      if(siteSettings.lbAnimateTop3) div.classList.add('lb-animate');
+      podium.appendChild(div);
+    });
+  }
+  const list = document.getElementById('lb-list'); list.innerHTML='';
+  if(!data.length){ list.innerHTML = '<p style="text-align:center;padding:30px;opacity:.7;">No results match your filters.</p>'; return; }
+  data.slice(0, siteSettings.lbPageSize||100).forEach((r,i)=>{
+    const row = document.createElement('div'); row.className='lb-row';
+    if((r.name||'').toLowerCase()===myName && myName) row.classList.add('me');
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    const modeLabel = r.mode==='country' ? 'Country of Capitals' : 'Capital of Countries';
+    row.innerHTML = `<span class="lb-rank">${medal}</span><span class="lb-name">${escapeHTML(r.name)}</span><span class="lb-mode-tag">${modeLabel}</span><span class="lb-score">${r.percentage}%</span>`;
+    if(i<3){ if(colorMap[i]) row.style.color = colorMap[i]; if(siteSettings.lbAnimateTop3) row.classList.add('lb-animate'); }
+    row.ondblclick = ()=> openLbProfile(r, i+1);
+    list.appendChild(row);
+  });
+}
+function openLbProfile(r, rank){
+  lbProfileRecord = r;
+  document.getElementById('lbp-name').textContent = `👤 ${r.name}`;
+  const modeLabel = r.mode==='country' ? 'Country of Capitals' : 'Capital of Countries';
+  const when = r.ts ? new Date(r.ts) : null;
+  document.getElementById('lbp-details').innerHTML = `<p><b>Rank:</b> #${rank}</p><p><b>Score:</b> ${r.score}/30 (${r.percentage}%)</p><p><b>Mode:</b> ${escapeHTML(modeLabel)}</p><p><b>Played:</b> ${when?when.toLocaleString():'-'}</p>`;
+  openModal('modal-lb-profile');
+}
+async function viewLbProfileCertificate(){
+  if(!lbProfileRecord) return;
+  const record = {
+    code:'CC-'+(lbProfileRecord.id||Math.random().toString(36).slice(2,8)).slice(0,8).toUpperCase(),
+    name:lbProfileRecord.name, score:`${lbProfileRecord.score}/30`, grade:getGrade(lbProfileRecord.percentage),
+    percentText:`${lbProfileRecord.percentage}%`, pct:lbProfileRecord.percentage, mode:lbProfileRecord.mode,
+    date: lbProfileRecord.ts ? new Date(lbProfileRecord.ts).toLocaleDateString() : new Date().toLocaleDateString()
+  };
+  lastCertRecord = record;
+  await showCertificatePreview(record);
+}
+async function showHistory(){
+  switchScreen('history-screen');
+  const list = document.getElementById('history-list'); list.innerHTML = '<p style="text-align:center;padding:30px;opacity:.7;">Loading your recent history…</p>';
+  const name = (document.getElementById('user-name').value||'').trim().toLowerCase();
+  await loadResultsCache(300);
+  const now = Date.now();
+  const mine = cachedResults.filter(r=> (now-(r.ts||0))<=86400000 && (!name || (r.name||'').toLowerCase()===name));
+  list.innerHTML='';
+  if(!mine.length){ list.innerHTML = '<p style="text-align:center;padding:30px;opacity:.7;">No history in the last 24 hours. Enter your name and play a round!</p>'; return; }
+  mine.sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(r=>{
+    const row = document.createElement('div'); row.className='daily-row';
+    const modeLabel = r.mode==='country' ? 'Country of Capitals' : 'Capital of Countries';
+    row.innerHTML = `<span>${escapeHTML(r.name)} <small style="opacity:.6;">· ${new Date(r.ts).toLocaleString()} · ${modeLabel}</small></span><span>${r.percentage}% (${r.score}/30)</span>`;
+    list.appendChild(row);
+  });
+}
+
+/* ================= WORLD + DIRECT CHAT ================= */
+function openWorldChat(){
+  switchScreen('worldchat-screen');
+  chatMode='world'; currentDMPartner=null;
+  document.getElementById('tab-world-btn').classList.add('active');
+  document.getElementById('tab-dm-btn').classList.remove('active');
+  document.getElementById('dm-panel').style.display='none';
+  document.getElementById('dm-active-label').style.display='none';
+  const savedName = localStorage.getItem('acq_chat_name');
+  if(savedName){
+    document.getElementById('chat-gate').style.display='none';
+    document.getElementById('chat-room').style.display='flex';
+    startChatListener();
+  } else {
+    document.getElementById('chat-gate').style.display='flex';
+    document.getElementById('chat-room').style.display='none';
+    document.getElementById('chat-name-input').value='';
+  }
+}
+function joinWorldChat(){
+  const name = document.getElementById('chat-name-input').value.trim();
+  if(!name){ showToast('Please enter your name first'); return; }
+  localStorage.setItem('acq_chat_name', name);
+  document.getElementById('chat-gate').style.display='none';
+  document.getElementById('chat-room').style.display='flex';
+  startChatListener();
+}
+function estimateMsgBytes(msg){
+  let n = (msg.text||'').length;
+  if(msg.fileData) n += msg.fileData.length;
+  return n;
+}
+async function checkAndResetWorldChatIfNeeded(newMsgBytes){
+  try{
+    const doc = await SETTINGS_DOC.get();
+    const data = doc.exists ? doc.data() : {};
+    const used = data.worldChatBytes || 0;
+    if(used + newMsgBytes > WORLD_CHAT_MAX_BYTES){
+      showToast('♻️ World Chat storage limit reached — auto-clearing chat to free up space…');
+      const snap = await db.collection(CHAT_COL).limit(1000).get();
+      await Promise.all(snap.docs.map(d=>d.ref.delete()));
+      await SETTINGS_DOC.set({ worldChatBytes:0 }, {merge:true});
+      return 0;
+    }
+    return used;
+  }catch(e){ return 0; }
+}
+async function sendChatMessage(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  const name = localStorage.getItem('acq_chat_name');
+  const fileInput = document.getElementById('chat-file-input');
+  const file = fileInput.files[0];
+  if(!text && !file) return;
+  if(!name) return;
+  let fileData='', fileType='', fileName='';
+  if(file){
+    if(file.size > 700*1024){ showToast('⚠️ File too large (max 700KB)'); return; }
+    try{ fileData = await fileToDataURL(file); fileType=file.type; fileName=file.name; }
+    catch(e){ showToast('⚠️ Could not read file'); return; }
+  }
+  input.value=''; fileInput.value='';
+  const msg = { name, text, fileData, fileType, fileName, ts:Date.now(), color: nameToColor(name) };
+
+  if(chatMode==='world'){
+    const bytes = estimateMsgBytes(msg);
+    const used = await checkAndResetWorldChatIfNeeded(bytes);
+    db.collection(CHAT_COL).add(msg).then(()=>{
+      SETTINGS_DOC.set({ worldChatBytes: (used||0)+bytes }, {merge:true}).catch(()=>{});
+    }).catch(()=> showToast('⚠️ Message failed to send'));
+  } else {
+    if(!currentDMPartner){ showToast('Select someone to message first'); return; }
+    const pairId = dmPairId(name, currentDMPartner);
+    db.collection(DM_COL).doc(pairId).collection('messages').add(msg).catch(()=> showToast('⚠️ Message failed to send'));
+    db.collection(DM_COL).doc(pairId).set({ participants:[name,currentDMPartner], lastTs:Date.now() }, {merge:true}).catch(()=>{});
+  }
+}
+function dmPairId(a,b){ return [String(a).trim().toLowerCase(), String(b).trim().toLowerCase()].sort().join('__'); }
+function renderChatMessages(msgs, myName){
+  const box = document.getElementById('chat-messages');
+  box.innerHTML='';
+  if(!msgs.length){ box.innerHTML = '<p style="text-align:center;opacity:.6;font-size:.78rem;">No messages yet — say hi!</p>'; return; }
+  msgs.forEach(m=>{
+    const mine = (m.name||'').toLowerCase()===myName;
+    const div = document.createElement('div');
+    div.className = 'chat-msg' + (mine ? ' me':'');
+    let inner = `<b style="color:${mine?'inherit':(m.color||nameToColor(m.name))}">${escapeHTML(m.name||'Guest')}</b>`;
+    if(m.text) inner += escapeHTML(m.text);
+    if(m.fileData){
+      if((m.fileType||'').startsWith('image/')) inner += `<img class="chat-img" src="${m.fileData}">`;
+      else inner += `<a class="chat-file-link" href="${m.fileData}" download="${escapeHTML(m.fileName||'file')}">📎 ${escapeHTML(m.fileName||'Download file')}</a>`;
+    }
+    if(mine) inner += `<button class="del-msg" data-id="${m.id}" title="Delete">🗑️</button>`;
+    div.innerHTML = inner;
+    if(mine){ const delBtn = div.querySelector('.del-msg'); if(delBtn) delBtn.onclick = ()=> deleteChatMessage(m.id); }
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+function deleteChatMessage(id){
+  if(chatMode==='world'){
+    db.collection(CHAT_COL).doc(id).delete().catch(()=> showToast('⚠️ Could not delete'));
+  } else {
+    const name = localStorage.getItem('acq_chat_name');
+    if(!currentDMPartner) return;
+    const pairId = dmPairId(name, currentDMPartner);
+    db.collection(DM_COL).doc(pairId).collection('messages').doc(id).delete().catch(()=> showToast('⚠️ Could not delete'));
+  }
+}
+function startChatListener(){
+  if(chatUnsub) chatUnsub();
+  chatMode='world'; currentDMPartner=null;
+  const box = document.getElementById('chat-messages');
+  box.innerHTML = '<p style="text-align:center;opacity:.6;font-size:.78rem;">Loading messages…</p>';
+  chatUnsub = db.collection(CHAT_COL).orderBy('ts','desc').limit(80).onSnapshot(snap=>{
+    const myName = (localStorage.getItem('acq_chat_name')||'').toLowerCase();
+    const msgs = snap.docs.map(d=>({id:d.id, ...d.data()})).reverse();
+    renderChatMessages(msgs, myName);
+  }, err=>{ box.innerHTML = '<p style="text-align:center;opacity:.6;font-size:.78rem;">⚠️ Could not load chat (check your connection)</p>'; });
+}
+function startDMListener(partner){
+  if(dmUnsub) dmUnsub();
+  chatMode='dm'; currentDMPartner = partner;
+  const label = document.getElementById('dm-active-label');
+  label.style.display='block'; label.textContent = `✉️ Chatting with ${partner}`;
+  const name = localStorage.getItem('acq_chat_name');
+  const pairId = dmPairId(name, partner);
+  const box = document.getElementById('chat-messages');
+  box.innerHTML = '<p style="text-align:center;opacity:.6;font-size:.78rem;">Loading messages…</p>';
+  dmUnsub = db.collection(DM_COL).doc(pairId).collection('messages').orderBy('ts','desc').limit(80).onSnapshot(snap=>{
+    const myName = (name||'').toLowerCase();
+    const msgs = snap.docs.map(d=>({id:d.id, ...d.data()})).reverse();
+    renderChatMessages(msgs, myName);
+  }, err=>{ box.innerHTML = '<p style="text-align:center;opacity:.6;font-size:.78rem;">⚠️ Could not load messages</p>'; });
+}
+async function loadDMUserList(){
+  try{
+    const snap = await db.collection(CHAT_COL).orderBy('ts','desc').limit(200).get();
+    const names = new Set();
+    snap.docs.forEach(d=>{ const n=d.data().name; if(n) names.add(n); });
+    dmKnownUsers = Array.from(names);
+  }catch(e){ dmKnownUsers=[]; }
+  renderDMUserList();
+}
+function renderDMUserList(){
+  const myName = localStorage.getItem('acq_chat_name')||'';
+  const searchRaw = (document.getElementById('dm-search').value||'').trim();
+  const search = searchRaw.toLowerCase();
+  const list = document.getElementById('dm-user-list'); list.innerHTML='';
+  let names = dmKnownUsers.filter(n=> n.toLowerCase()!==myName.toLowerCase());
+  if(search) names = names.filter(n=>n.toLowerCase().includes(search));
+  if(searchRaw && !names.some(n=>n.toLowerCase()===search)) names = [searchRaw, ...names];
+  names.slice(0,20).forEach(n=>{
+    if(!n) return;
+    const row = document.createElement('div'); row.className='dm-user-row';
+    row.innerHTML = `<span style="color:${nameToColor(n)};font-weight:700;">${escapeHTML(n)}</span><span>💬 Chat</span>`;
+    row.onclick = ()=> startDMListener(n);
+    list.appendChild(row);
+  });
+  if(!names.length) list.innerHTML = '<p style="opacity:.6;font-size:.78rem;">No users found. Type a name above to start a new chat.</p>';
+}
+function leaveWorldChat(){
+  if(chatUnsub){ chatUnsub(); chatUnsub=null; }
+  if(dmUnsub){ dmUnsub(); dmUnsub=null; }
+  switchScreen('welcome-screen');
+}
+
+function makeCertCode(){ return 'CC-' + Math.random().toString(36).slice(2,8).toUpperCase(); }
+async function generateCertificate(){
+  const name = document.getElementById('user-name').value || 'Guest';
+  const scoreText = document.getElementById('stat-score').textContent;
+  const grade = document.getElementById('stat-grade').textContent;
+  const pctText = document.getElementById('stat-percentage').textContent;
+  const pct = parseInt(pctText)||0;
+  const record = { code:makeCertCode(), name, score:scoreText, grade, percentText:pctText, pct, mode:quizMode, date:lastFinishTime.toLocaleDateString(), ts:lastFinishTime.getTime() };
+  try{ await db.collection(CERTS_COL).doc(record.code).set(record); incrementGlobalCounters('totalCertificates'); refreshGlobalLiveStats(); }
+  catch(err){ showToast('⚠️ Certificate saved locally only (offline)'); }
+  lastCertRecord = record;
+  await showCertificatePreview(record);
+}
+async function renderCertificateFields(record){
+  const tier = getTier(record.pct);
+  const accent = siteSettings.certAccentColor || null;
+  const textColor = siteSettings.certTextColor || tier.text;
+  const grad = accent ? `linear-gradient(135deg, ${accent}, ${accent}dd)` : tier.grad;
+  const icon = siteSettings.certWatermarkIcon || '🧭';
+
+  document.getElementById('cert-name').textContent = record.name;
+  document.getElementById('cert-score').textContent = record.score;
+  document.getElementById('cert-grade').textContent = record.grade;
+  document.getElementById('cert-percent').textContent = record.percentText;
+  document.getElementById('cert-date').textContent = `Date: ${record.date}`;
+  document.getElementById('cert-id').textContent = `Certificate No: ${record.code}`;
+  document.getElementById('cert-mode-tag').textContent = record.mode==='country' ? 'Mode: Country of Capitals' : 'Mode: Capital of Countries';
+  document.getElementById('cert-sign-title').textContent = siteSettings.certSignatureTitle;
+  document.getElementById('cert-quiz-title').textContent = siteSettings.certCourseName;
+  document.getElementById('cert-owner-caption').textContent = `Owner: ${siteSettings.certOwnerName}`;
+  const sealBrand = document.querySelector('#certificate-area .seal-brand');
+  if(sealBrand) sealBrand.textContent = (siteSettings.siteTitle||'Capital Compass').toUpperCase();
+
+  const sigEl = document.getElementById('cert-signature');
+  const sigImgEl = document.getElementById('cert-signature-img');
+  if(siteSettings.certSignatureImage){
+    sigImgEl.src = siteSettings.certSignatureImage;
+    sigImgEl.style.display = 'block';
+    sigEl.style.display = 'none';
+  } else {
+    sigImgEl.style.display = 'none';
+    sigEl.style.display = 'inline-block';
+    sigEl.textContent = siteSettings.certSignatureName;
+    sigEl.style.color = siteSettings.certSignatureColor || '#161327';
+    const sig = SIGNATURE_STYLES[siteSettings.certSignatureStyleIndex] || SIGNATURE_STYLES[0];
+    sigEl.style.fontFamily = `'${sig.font}',cursive`;
+    sigEl.style.fontSize = sig.size;
+    sigEl.style.fontWeight = sig.weight;
+    sigEl.style.transform = `rotate(${sig.rot}deg)`;
+  }
+
+  const wmEl = document.getElementById('cert-watermark');
+  if(siteSettings.certWatermarkImage){ wmEl.innerHTML = `<img src="${siteSettings.certWatermarkImage}" style="width:60%;height:60%;object-fit:contain;">`; }
+  else { wmEl.innerHTML = ''; wmEl.textContent = icon; }
+
+  const sealIconEl = document.getElementById('cert-seal-icon');
+  const sealImgEl = document.getElementById('cert-seal-img');
+  if(siteSettings.certStampImage){ sealImgEl.src = siteSettings.certStampImage; sealImgEl.style.display='block'; sealIconEl.style.display='none'; }
+  else { sealImgEl.style.display='none'; sealIconEl.style.display='block'; sealIconEl.textContent = icon; }
+
+  const tierEl = document.getElementById('cert-tier-name');
+  tierEl.textContent = tier.name;
+  tierEl.style.background = grad;
+  tierEl.style.color = textColor;
+
+  const seal = document.getElementById('cert-seal');
+  seal.style.background = grad;
+  seal.style.color = textColor;
+  document.getElementById('cert-ribbon').style.color = accent || '#f5a623';
+
+  document.getElementById('cert-eyebrow').style.color = accent || '#00b8a9';
+  document.getElementById('cert-quiz-title').style.color = accent || '#00b8a9';
+  document.getElementById('cert-border-el').style.borderColor = accent || '#f5a623';
+  ['cert-corner-tl','cert-corner-tr','cert-corner-bl','cert-corner-br'].forEach(id=> document.getElementById(id).style.borderColor = accent || '#00b8a9');
+
+  document.getElementById('certificate-area').style.background = siteSettings.certBackgroundColor || '#fffdf6';
+
+  document.getElementById('cert-trophy').style.display = record.pct<50 ? 'none' : 'block';
+  const starsN = Math.max(1, Math.ceil(record.pct/20));
+  document.getElementById('cert-stars').textContent = '⭐'.repeat(starsN) + '☆'.repeat(5-starsN);
+
+  const note = document.getElementById('cert-verify-note');
+  note.innerHTML = siteSettings.certLink
+    ? `Go to <b>${escapeHTML(siteSettings.certLink)}</b> and enter the certificate number below to confirm this certificate is real.`
+    : `Visit the ${escapeHTML(siteSettings.siteTitle)} website and enter the certificate number below to confirm this certificate is real.`;
+}
+async function showCertificatePreview(record){
+  await renderCertificateFields(record);
+  const mount = document.getElementById('cert-preview-mount'); mount.innerHTML='';
+  const clone = document.getElementById('certificate-area').cloneNode(true);
+  clone.removeAttribute('id'); clone.classList.add('cert-preview-clone');
+  mount.appendChild(clone);
+  openModal('modal-cert-view');
+  requestAnimationFrame(()=> setTimeout(fitCertPreview, 30));
+}
+function fitCertPreview(){
+  const wrap = document.querySelector('.cert-preview-wrap');
+  const clone = document.querySelector('.cert-preview-clone');
+  if(!wrap||!clone) return;
+  clone.style.transform = `scale(${wrap.clientWidth/1122.5})`;
+}
+window.addEventListener('resize', fitCertPreview);
+async function downloadCertificateImage(){
+  const area = document.getElementById('certificate-area');
+  const oldLeft = area.style.left, oldZ = area.style.zIndex;
+  area.style.zIndex='-1'; area.style.left='0px'; area.style.top='0px';
+  try{
+    const canvas = await html2canvas(area, {scale:2, backgroundColor: siteSettings.certBackgroundColor || '#fffdf6', useCORS:true});
+    const a = document.createElement('a');
+    a.download = `${(siteSettings.siteTitle||'CapitalCompass').replace(/\s+/g,'')}_Certificate_${lastCertRecord?lastCertRecord.code:'result'}.png`;
+    a.href = canvas.toDataURL('image/png'); a.click();
+    showToast('✅ Certificate downloaded');
+  }catch(e){ showToast('⚠️ Could not generate certificate image'); }
+  finally{ area.style.left = oldLeft||'-9999px'; area.style.top='0'; area.style.zIndex = oldZ||''; }
+}
+
+async function handleVerifySearch(){
+  const code = document.getElementById('verify-input').value.trim().toUpperCase();
+  const resultBox = document.getElementById('verify-result');
+  if(!code){ showToast('Enter a certificate number first'); return; }
+  resultBox.classList.add('show'); resultBox.innerHTML = 'Searching global database…'; resultBox.classList.remove('not-found');
+  let record = null;
+  try{ const doc = await db.collection(CERTS_COL).doc(code).get(); if(doc.exists) record = doc.data(); }catch(err){}
+  if(!record){ resultBox.classList.add('not-found'); resultBox.innerHTML = `❌ No certificate found for number "${escapeHTML(code)}". Double-check and try again.`; return; }
+  const modeLabel = record.mode==='country' ? 'Country of Capitals' : 'Capital of Countries';
+  const tier = getTier(record.pct);
+  resultBox.innerHTML = `<p style="font-weight:800;color:var(--success);margin-bottom:10px;">✔ Genuine ${escapeHTML(siteSettings.siteTitle)} certificate</p>
+    <dl><dt>Name</dt><dd>${escapeHTML(record.name)}</dd><dt>Mode</dt><dd>${escapeHTML(modeLabel)}</dd><dt>Score</dt><dd>${escapeHTML(record.score)} (${escapeHTML(record.percentText)})</dd>
+    <dt>Grade</dt><dd>${escapeHTML(record.grade)}</dd><dt>Tier</dt><dd>${escapeHTML(tier.name)}</dd><dt>Date</dt><dd>${escapeHTML(record.date)}</dd><dt>Number</dt><dd>${escapeHTML(record.code)}</dd></dl>
+    <button class="btn btn-gold" style="margin-top:14px;width:100%;" id="verify-view-btn">📄 View &amp; download this certificate</button>`;
+  document.getElementById('verify-view-btn').onclick = async () => { lastCertRecord = record; await showCertificatePreview(record); };
+}
+
+function openAdminLogin(){
+  document.getElementById('admin-pass-input').value='';
+  document.getElementById('admin-pass-error').style.display='none';
+  openModal('modal-admin-login');
+}
+function checkAdminPassword(){
+  const val = document.getElementById('admin-pass-input').value.trim();
+  if(val === ADMIN_PASSWORD){
+    isAdmin = true;
+    closeModal('modal-admin-login');
+    openAdminPanel();
+  } else {
+    document.getElementById('admin-pass-error').style.display='block';
+  }
+}
+const ADMIN_CATEGORIES = [
+  {id:'overview', icon:'📈', label:'Overview'},
+  {id:'mainmenu', icon:'🏠', label:'Main Menu'},
+  {id:'certdesign', icon:'🎨', label:'Certificate Design'},
+  {id:'certcontent', icon:'✍️', label:'Certificate Content'},
+  {id:'leaderboard', icon:'🏆', label:'Leaderboard & Data'},
+  {id:'submissions', icon:'👥', label:'Submissions'},
+  {id:'danger', icon:'⚠️', label:'Danger Zone'}
+];
+function openAdminPanel(){
+  switchScreen('admin-screen');
+  renderAdminCats();
+  renderAdminTab('overview');
+}
+function renderAdminCats(){
+  const mount = document.getElementById('admin-cats-mount'); mount.innerHTML='';
+  ADMIN_CATEGORIES.forEach(cat=>{
+    const btn = document.createElement('button');
+    btn.className = 'admin-cat-btn' + (adminCurrentTab===cat.id ? ' active':'');
+    btn.innerHTML = `<span>${cat.icon}</span><span>${cat.label}</span>`;
+    btn.onclick = ()=> renderAdminTab(cat.id);
+    mount.appendChild(btn);
+  });
+}
+async function renderAdminTab(tab){
+  adminCurrentTab = tab;
+  renderAdminCats();
+  const mount = document.getElementById('admin-panel-mount'); mount.innerHTML='';
+  if(tab==='overview') await renderAdminOverview(mount);
+  else if(tab==='mainmenu') renderAdminMainMenu(mount);
+  else if(tab==='certdesign') renderAdminCertDesign(mount);
+  else if(tab==='certcontent') renderAdminCertContent(mount);
+  else if(tab==='leaderboard') renderAdminLeaderboardTab(mount);
+  else if(tab==='submissions') await renderAdminSubmissions(mount);
+  else if(tab==='danger') renderAdminDanger(mount);
+}
+async function renderAdminOverview(mount){
+  await loadResultsCache(300);
+  const total = cachedResults.length;
+  const avg = total ? Math.round(cachedResults.reduce((s,r)=>s+(r.percentage||0),0)/total) : 0;
+  const todayKey = new Date().toISOString().split('T')[0];
+  const todayCount = cachedResults.filter(r=>r.dateKey===todayKey).length;
+  let certs = 0, chatMB = 0;
+  try{ const doc = await SETTINGS_DOC.get(); const d = doc.exists?doc.data():{}; certs = d.totalCertificates||0; chatMB = ((d.worldChatBytes||0)/(1024*1024)).toFixed(1); }catch(e){}
+  const sec = document.createElement('div'); sec.className='admin-section card';
+  sec.innerHTML = `<h3>📈 Global Statistics</h3><div class="admin-stats-grid">
+    <div class="lb-stat-chip"><h4>${total}</h4><p>Quizzes taken</p></div>
+    <div class="lb-stat-chip"><h4>${certs}</h4><p>Certificates issued</p></div>
+    <div class="lb-stat-chip"><h4>${todayCount}</h4><p>Today</p></div>
+    <div class="lb-stat-chip"><h4>${avg}%</h4><p>Average score</p></div>
+    <div class="lb-stat-chip"><h4>${chatMB} MB</h4><p>World Chat storage used (of 500 MB)</p></div></div>`;
+  mount.appendChild(sec);
+}
+function renderAdminMainMenu(mount){
+  const sec = document.createElement('div'); sec.className='admin-section card';
+  sec.innerHTML = `<h3>🏠 Main Menu &amp; Branding</h3>
+    <div class="admin-field"><label>Website / site name</label><input type="text" id="admin-site-title" value="${escapeHTML(siteSettings.siteTitle)}"></div>
+    <div class="admin-field"><label>Footer text</label><input type="text" id="admin-footer-text" value="${escapeHTML(siteSettings.footerText)}"></div>
+    <div class="admin-field"><label><input type="checkbox" id="admin-footer-toggle" ${siteSettings.showFooterCredit?'checked':''}> Show footer credit line</label></div>
+    <div class="admin-field"><label>Site logo (splash screen &amp; hero)</label>
+      <div class="file-drop" id="admin-logo-drop">📤 Click to upload a logo image</div>
+      <input type="file" id="admin-logo-file" accept="image/*" style="display:none;">
+      <img class="file-preview" id="admin-logo-preview" src="${siteSettings.siteLogo||''}" style="${siteSettings.siteLogo?'':'display:none;'}">
+      <button class="btn btn-ghost btn-sm" id="admin-logo-clear" style="margin-top:6px;">Remove logo</button>
+    </div>
+    <div class="admin-field"><label>Menu button accent color</label><input type="color" id="admin-menu-color" value="${siteSettings.menuButtonColor||'#f5a623'}"></div>
+    <h3 style="margin-top:18px;">Menu button labels</h3>
+    <div class="admin-field"><label>Start Quiz button</label><input type="text" id="admin-lbl-start" value="${escapeHTML(siteSettings.menuLabels.start)}"></div>
+    <div class="admin-field"><label>Leaderboard button</label><input type="text" id="admin-lbl-leaderboard" value="${escapeHTML(siteSettings.menuLabels.leaderboard)}"></div>
+    <div class="admin-field"><label>History button</label><input type="text" id="admin-lbl-history" value="${escapeHTML(siteSettings.menuLabels.history)}"></div>
+    <div class="admin-field"><label>Revision button</label><input type="text" id="admin-lbl-revision" value="${escapeHTML(siteSettings.menuLabels.revision)}"></div>
+    <div class="admin-field"><label>Certificates button</label><input type="text" id="admin-lbl-verify" value="${escapeHTML(siteSettings.menuLabels.verify)}"></div>
+    <div class="admin-field"><label>About / Help button</label><input type="text" id="admin-lbl-info" value="${escapeHTML(siteSettings.menuLabels.info)}"></div>
+    <button class="btn btn-gold" id="admin-save-mainmenu">💾 Save</button>`;
+  mount.appendChild(sec);
+  let pendingLogo = siteSettings.siteLogo;
+  document.getElementById('admin-logo-drop').onclick = ()=> document.getElementById('admin-logo-file').click();
+  document.getElementById('admin-logo-file').onchange = async (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    pendingLogo = await fileToDataURL(f);
+    const prev = document.getElementById('admin-logo-preview'); prev.src = pendingLogo; prev.style.display='block';
+  };
+  document.getElementById('admin-logo-clear').onclick = ()=>{ pendingLogo=''; const prev=document.getElementById('admin-logo-preview'); prev.style.display='none'; prev.src=''; };
+  document.getElementById('admin-save-mainmenu').onclick = async ()=>{
+    siteSettings.siteTitle = document.getElementById('admin-site-title').value.trim() || 'Capital Compass';
+    siteSettings.footerText = document.getElementById('admin-footer-text').value.trim() || 'This website is made by Muhammad Zeeshan';
+    siteSettings.showFooterCredit = document.getElementById('admin-footer-toggle').checked;
+    siteSettings.menuButtonColor = document.getElementById('admin-menu-color').value;
+    siteSettings.siteLogo = pendingLogo || '';
+    siteSettings.menuLabels = {
+      start: document.getElementById('admin-lbl-start').value.trim()||'Start Quiz',
+      leaderboard: document.getElementById('admin-lbl-leaderboard').value.trim()||'Leaderboard',
+      history: document.getElementById('admin-lbl-history').value.trim()||'History',
+      revision: document.getElementById('admin-lbl-revision').value.trim()||'Revision',
+      verify: document.getElementById('admin-lbl-verify').value.trim()||'Certificates',
+      info: document.getElementById('admin-lbl-info').value.trim()||'About / Help'
+    };
+    try{
+      await SETTINGS_DOC.set({ siteTitle:siteSettings.siteTitle, footerText:siteSettings.footerText, showFooterCredit:siteSettings.showFooterCredit,
+        menuButtonColor:siteSettings.menuButtonColor, siteLogo:siteSettings.siteLogo, menuLabels:siteSettings.menuLabels }, {merge:true});
+      applyBranding(); showToast('✅ Main menu settings saved');
+    }catch(e){ showToast('⚠️ Could not save (logo image may be too large)'); }
+  };
+}
+function renderAdminCertDesign(mount){
+  const sec = document.createElement('div'); sec.className='admin-section card';
+  sec.innerHTML = `<h3>🎨 Certificate Design</h3>
+    <div class="admin-field color-row">
+      <div><label>Accent color</label><input type="color" id="admin-cert-accent" value="${siteSettings.certAccentColor||'#f5a623'}"></div>
+      <div><label>Text color</label><input type="color" id="admin-cert-text" value="${siteSettings.certTextColor||'#ffffff'}"></div>
+      <div><label>Background color</label><input type="color" id="admin-cert-bg" value="${siteSettings.certBackgroundColor||'#fffdf6'}"></div>
+      <button class="btn btn-ghost btn-sm" id="admin-cert-color-clear">Use automatic tier colors</button>
+    </div>
+    <div class="admin-field"><label>Watermark preset (used unless a custom image is uploaded)</label>
+      <div class="icon-grid" id="admin-icon-grid"></div>
+    </div>
+    <div class="admin-field"><label>Custom watermark / background image</label>
+      <div class="file-drop" id="admin-wm-drop">📤 Click to upload a background image</div>
+      <input type="file" id="admin-wm-file" accept="image/*" style="display:none;">
+      <img class="file-preview" id="admin-wm-preview" src="${siteSettings.certWatermarkImage||''}" style="${siteSettings.certWatermarkImage?'':'display:none;'}">
+      <button class="btn btn-ghost btn-sm" id="admin-wm-clear" style="margin-top:6px;">Remove custom image</button>
+    </div>
+    <div class="admin-field"><label>Custom stamp / seal image</label>
+      <div class="file-drop" id="admin-stamp-drop">📤 Click to upload a stamp image</div>
+      <input type="file" id="admin-stamp-file" accept="image/*" style="display:none;">
+      <img class="file-preview" id="admin-stamp-preview" src="${siteSettings.certStampImage||''}" style="${siteSettings.certStampImage?'':'display:none;'}">
+      <button class="btn btn-ghost btn-sm" id="admin-stamp-clear" style="margin-top:6px;">Remove stamp image</button>
+    </div>
+    <div class="admin-field"><label>Signature design — choose 1 of 30 fonts</label>
+      <div class="sig-grid" id="admin-sig-grid"></div>
+    </div>
+    <div class="admin-field"><label>Or draw your own signature</label>
+      <canvas id="admin-sig-canvas" class="sig-canvas-wrap" width="400" height="140"></canvas>
+      <div class="color-row" style="margin-top:8px;">
+        <div><label>Pen / signature color</label><input type="color" id="admin-sig-pen-color" value="${siteSettings.certSignatureColor||'#161327'}"></div>
+        <button class="btn btn-ghost btn-sm" id="admin-sig-clear">🧹 Clear drawing</button>
+        <button class="btn btn-ghost btn-sm" id="admin-sig-use-text">Use font signature instead</button>
+      </div>
+    </div>
+    <button class="btn btn-gold" id="admin-save-certdesign">💾 Save</button>`;
+  mount.appendChild(sec);
+
+  const grid = document.getElementById('admin-icon-grid');
+  CERT_BG_PRESETS.forEach(p=>{
+    const opt = document.createElement('div');
+    opt.className = 'icon-opt' + (siteSettings.certWatermarkIcon===p.icon ? ' active':'');
+    opt.textContent = p.icon; opt.title = p.label;
+    opt.onclick = ()=>{ document.querySelectorAll('#admin-icon-grid .icon-opt').forEach(o=>o.classList.remove('active')); opt.classList.add('active'); };
+    opt.dataset.icon = p.icon;
+    grid.appendChild(opt);
+  });
+
+  const sigGrid = document.getElementById('admin-sig-grid');
+  SIGNATURE_STYLES.forEach((s,i)=>{
+    const opt = document.createElement('div');
+    opt.className = 'sig-opt' + (siteSettings.certSignatureStyleIndex===i && !siteSettings.certSignatureImage ? ' active':'');
+    opt.style.fontFamily = `'${s.font}',cursive`; opt.style.fontWeight = s.weight; opt.style.transform = `rotate(${s.rot}deg)`;
+    opt.textContent = 'Signature';
+    opt.title = s.font;
+    opt.onclick = ()=>{ document.querySelectorAll('#admin-sig-grid .sig-opt').forEach(o=>o.classList.remove('active')); opt.classList.add('active'); };
+    opt.dataset.index = i;
+    sigGrid.appendChild(opt);
+  });
+
+  // ---- Signature drawing canvas ----
+  const canvas = document.getElementById('admin-sig-canvas');
+  sigCanvasCtx = canvas.getContext('2d');
+  sigCanvasCtx.lineWidth = 3; sigCanvasCtx.lineCap = 'round'; sigCanvasCtx.lineJoin='round';
+  sigCanvasCtx.strokeStyle = document.getElementById('admin-sig-pen-color').value;
+  sigHasDrawing = false;
+  if(siteSettings.certSignatureImage){
+    const img = new Image();
+    img.onload = ()=> sigCanvasCtx.drawImage(img,0,0,canvas.width,canvas.height);
+    img.src = siteSettings.certSignatureImage;
+    sigHasDrawing = true;
+  }
+  function getPos(e){
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x: cx*(canvas.width/rect.width), y: cy*(canvas.height/rect.height) };
+  }
+  function startDraw(e){ sigDrawing=true; const p=getPos(e); sigCanvasCtx.beginPath(); sigCanvasCtx.moveTo(p.x,p.y); e.preventDefault(); }
+  function moveDraw(e){ if(!sigDrawing) return; const p=getPos(e); sigCanvasCtx.lineTo(p.x,p.y); sigCanvasCtx.stroke(); sigHasDrawing=true; e.preventDefault(); }
+  function endDraw(){ sigDrawing=false; }
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('touchstart', startDraw, {passive:false});
+  canvas.addEventListener('touchmove', moveDraw, {passive:false});
+  canvas.addEventListener('touchend', endDraw);
+  document.getElementById('admin-sig-pen-color').onchange = (e)=>{ sigCanvasCtx.strokeStyle = e.target.value; };
+  document.getElementById('admin-sig-clear').onclick = ()=>{ sigCanvasCtx.clearRect(0,0,canvas.width,canvas.height); sigHasDrawing=false; };
+  document.getElementById('admin-sig-use-text').onclick = ()=>{ sigCanvasCtx.clearRect(0,0,canvas.width,canvas.height); sigHasDrawing=false; showToast('Will use font signature on save'); };
+
+  let pendingWm = siteSettings.certWatermarkImage, pendingStamp = siteSettings.certStampImage;
+  document.getElementById('admin-wm-drop').onclick = ()=> document.getElementById('admin-wm-file').click();
+  document.getElementById('admin-wm-file').onchange = async (e)=>{ const f=e.target.files[0]; if(!f) return; pendingWm = await fileToDataURL(f); const p=document.getElementById('admin-wm-preview'); p.src=pendingWm; p.style.display='block'; };
+  document.getElementById('admin-wm-clear').onclick = ()=>{ pendingWm=''; const p=document.getElementById('admin-wm-preview'); p.style.display='none'; p.src=''; };
+  document.getElementById('admin-stamp-drop').onclick = ()=> document.getElementById('admin-stamp-file').click();
+  document.getElementById('admin-stamp-file').onchange = async (e)=>{ const f=e.target.files[0]; if(!f) return; pendingStamp = await fileToDataURL(f); const p=document.getElementById('admin-stamp-preview'); p.src=pendingStamp; p.style.display='block'; };
+  document.getElementById('admin-stamp-clear').onclick = ()=>{ pendingStamp=''; const p=document.getElementById('admin-stamp-preview'); p.style.display='none'; p.src=''; };
+
+  document.getElementById('admin-cert-color-clear').onclick = async ()=>{
+    siteSettings.certAccentColor=''; siteSettings.certTextColor=''; siteSettings.certBackgroundColor='';
+    await SETTINGS_DOC.set({ certAccentColor:'', certTextColor:'', certBackgroundColor:'' }, {merge:true});
+    showToast('✅ Reverted to automatic tier colors'); renderAdminTab('certdesign');
+  };
+  document.getElementById('admin-save-certdesign').onclick = async ()=>{
+    siteSettings.certAccentColor = document.getElementById('admin-cert-accent').value;
+    siteSettings.certTextColor = document.getElementById('admin-cert-text').value;
+    siteSettings.certBackgroundColor = document.getElementById('admin-cert-bg').value;
+    const activeIcon = document.querySelector('#admin-icon-grid .icon-opt.active');
+    siteSettings.certWatermarkIcon = activeIcon ? activeIcon.dataset.icon : '🧭';
+    siteSettings.certWatermarkImage = pendingWm || '';
+    siteSettings.certStampImage = pendingStamp || '';
+    const activeSig = document.querySelector('#admin-sig-grid .sig-opt.active');
+    siteSettings.certSignatureStyleIndex = activeSig ? +activeSig.dataset.index : 0;
+    siteSettings.certSignatureColor = document.getElementById('admin-sig-pen-color').value;
+    siteSettings.certSignatureImage = sigHasDrawing ? document.getElementById('admin-sig-canvas').toDataURL('image/png') : '';
+    try{
+      await SETTINGS_DOC.set({ certAccentColor:siteSettings.certAccentColor, certTextColor:siteSettings.certTextColor, certBackgroundColor:siteSettings.certBackgroundColor,
+        certWatermarkIcon:siteSettings.certWatermarkIcon, certWatermarkImage:siteSettings.certWatermarkImage, certStampImage:siteSettings.certStampImage,
+        certSignatureStyleIndex:siteSettings.certSignatureStyleIndex, certSignatureColor:siteSettings.certSignatureColor, certSignatureImage:siteSettings.certSignatureImage }, {merge:true});
+      showToast('✅ Certificate design saved');
+    }catch(e){ showToast('⚠️ Could not save (images may be too large)'); }
+  };
+}
+function renderAdminCertContent(mount){
+  const sec = document.createElement('div'); sec.className='admin-section card';
+  sec.innerHTML = `<h3>✍️ Certificate Content</h3>
+    <div class="admin-field"><label>Owner name (shown as "Owner: ...")</label><input type="text" id="admin-owner-name" value="${escapeHTML(siteSettings.certOwnerName)}"></div>
+    <div class="admin-field"><label>Course / assessment name</label><input type="text" id="admin-course-name" value="${escapeHTML(siteSettings.certCourseName)}"></div>
+    <div class="admin-field"><label>Signature name (used if no drawn signature)</label><input type="text" id="admin-sign-name" value="${escapeHTML(siteSettings.certSignatureName)}"></div>
+    <div class="admin-field"><label>Signature title</label><input type="text" id="admin-sign-title" value="${escapeHTML(siteSettings.certSignatureTitle)}"></div>
+    <div class="admin-field"><label>Verification website link</label><input type="text" id="admin-cert-link" placeholder="https://your-site.example.com/verify" value="${escapeHTML(siteSettings.certLink)}"></div>
+    <button class="btn btn-gold" id="admin-save-certcontent">💾 Save</button>`;
+  mount.appendChild(sec);
+  document.getElementById('admin-save-certcontent').onclick = async ()=>{
+    siteSettings.certOwnerName = document.getElementById('admin-owner-name').value.trim() || 'Site Owner';
+    siteSettings.certCourseName = document.getElementById('admin-course-name').value.trim() || 'World Capitals Assessment';
+    siteSettings.certSignatureName = document.getElementById('admin-sign-name').value.trim() || 'Quiz Master';
+    siteSettings.certSignatureTitle = document.getElementById('admin-sign-title').value.trim() || 'Quiz Master & Founder';
+    siteSettings.certLink = document.getElementById('admin-cert-link').value.trim();
+    await SETTINGS_DOC.set({ certOwnerName:siteSettings.certOwnerName, certCourseName:siteSettings.certCourseName, certSignatureName:siteSettings.certSignatureName,
+      certSignatureTitle:siteSettings.certSignatureTitle, certLink:siteSettings.certLink }, {merge:true});
+    showToast('✅ Certificate content saved');
+  };
+}
+function renderAdminLeaderboardTab(mount){
+  const sec = document.createElement('div'); sec.className='admin-section card';
+  sec.innerHTML = `<h3>🏆 Leaderboard &amp; Data</h3>
+    <div class="admin-field"><label>Rows shown on the leaderboard</label><input type="text" id="admin-lb-size" value="${siteSettings.lbPageSize}"></div>
+    <div class="admin-field color-row">
+      <div><label>Background color</label><input type="color" id="admin-lb-bg" value="${siteSettings.lbBackgroundColor||'#f4f0e6'}"></div>
+      <div><label>#1 color</label><input type="color" id="admin-lb-top1" value="${siteSettings.lbTop1Color||'#f5a623'}"></div>
+      <div><label>#2 color</label><input type="color" id="admin-lb-top2" value="${siteSettings.lbTop2Color||'#a7aebc'}"></div>
+      <div><label>#3 color</label><input type="color" id="admin-lb-top3" value="${siteSettings.lbTop3Color||'#b5713a'}"></div>
+    </div>
+    <div class="admin-field"><label><input type="checkbox" id="admin-lb-animate" ${siteSettings.lbAnimateTop3?'checked':''}> Animate top 3 (glow effect)</label></div>
+    <button class="btn btn-gold" id="admin-save-lb">💾 Save</button>`;
+  mount.appendChild(sec);
+  document.getElementById('admin-save-lb').onclick = async ()=>{
+    const n = parseInt(document.getElementById('admin-lb-size').value)||100;
+    siteSettings.lbPageSize = Math.max(10, Math.min(300, n));
+    siteSettings.lbBackgroundColor = document.getElementById('admin-lb-bg').value;
+    siteSettings.lbTop1Color = document.getElementById('admin-lb-top1').value;
+    siteSettings.lbTop2Color = document.getElementById('admin-lb-top2').value;
+    siteSettings.lbTop3Color = document.getElementById('admin-lb-top3').value;
+    siteSettings.lbAnimateTop3 = document.getElementById('admin-lb-animate').checked;
+    await SETTINGS_DOC.set({ lbPageSize:siteSettings.lbPageSize, lbBackgroundColor:siteSettings.lbBackgroundColor, lbTop1Color:siteSettings.lbTop1Color,
+      lbTop2Color:siteSettings.lbTop2Color, lbTop3Color:siteSettings.lbTop3Color, lbAnimateTop3:siteSettings.lbAnimateTop3 }, {merge:true});
+    showToast('✅ Leaderboard settings saved');
+  };
+}
+async function renderAdminSubmissions(mount){
+  const sec = document.createElement('div'); sec.className='admin-section card';
+  sec.innerHTML = `<h3>👥 All submissions (latest 300)</h3><div id="admin-sub-list" style="max-height:60vh;overflow-y:auto;"><p style="opacity:.7;padding:12px;">Loading…</p></div>`;
+  mount.appendChild(sec);
+  await loadResultsCache(300);
+  const list = document.getElementById('admin-sub-list'); list.innerHTML='';
+  if(!cachedResults.length){ list.innerHTML = '<p style="opacity:.7;padding:12px;">No submissions yet.</p>'; return; }
+  cachedResults.forEach(r=>{
+    const row = document.createElement('div'); row.className='admin-row';
+    const modeLabel = r.mode==='country' ? 'Country of Capitals' : 'Capital of Countries';
+    row.innerHTML = `<span class="col"><b>${escapeHTML(r.name||'Guest')}</b><br><small style="opacity:.65;">${r.ts?new Date(r.ts).toLocaleString():'-'} · ${modeLabel}</small></span><span style="font-weight:800;color:var(--success);">${r.percentage}%</span><button class="btn btn-danger btn-sm" data-id="${r.id}">🗑️ Delete</button>`;
+    row.querySelector('button').onclick = () => deleteResultEntry(r.id);
+    list.appendChild(row);
+  });
+}
+async function deleteResultEntry(id){
+  if(!confirm('Remove this submission permanently from the global database?')) return;
+  try{ await db.collection(RESULTS_COL).doc(id).delete(); showToast('🗑️ Entry removed'); await renderAdminTab('submissions'); }
+  catch(err){ showToast('⚠️ Could not delete (check connection)'); }
+}
+function renderAdminDanger(mount){
+  const sec = document.createElement('div'); sec.className='admin-section card';
+  sec.innerHTML = `<h3>⚠️ Danger Zone</h3>
+    <div class="danger-box" style="margin-bottom:14px;">
+      <p style="font-size:.85rem;margin-bottom:12px;">Reset the entire website's global data: leaderboard, history and certificates. A backup is kept automatically so you can Undo once.</p>
+      <button class="btn btn-danger" id="admin-reset-website">🗑️ Reset Website (with backup)</button>
+    </div>
+    <div class="danger-box" style="margin-bottom:14px;">
+      <p style="font-size:.85rem;margin-bottom:12px;">Restore everything exactly as it was from the last "Reset Website" backup.</p>
+      <button class="btn btn-teal" id="admin-undo-reset">↩️ Undo Last Reset</button>
+    </div>
+    <div class="danger-box" style="margin-bottom:14px;">
+      <p style="font-size:.85rem;margin-bottom:12px;font-weight:800;color:var(--danger);">Permanently delete everything. No backup is kept — this can NEVER be undone.</p>
+      <button class="btn btn-danger" id="admin-permanent-reset">☠️ Permanent Reset (irreversible)</button>
+    </div>
+    <div class="danger-box" style="margin-bottom:14px;">
+      <p style="font-size:.85rem;margin-bottom:12px;">Manually clear only the World Chat (messages + files) to free up storage right now.</p>
+      <button class="btn btn-danger" id="admin-clear-worldchat">💬 Clear World Chat Now</button>
+    </div>
+    <div class="danger-box">
+      <p style="font-size:.85rem;margin-bottom:12px;">Reset only your local device data (name, XP, coins, level, theme). Global leaderboard &amp; certificates stay online.</p>
+      <button class="btn btn-ghost" id="admin-local-reset">🧹 Reset This Device Only</button>
+    </div>`;
+  mount.appendChild(sec);
+  document.getElementById('admin-reset-website').onclick = ()=> openModal('modal-reset-confirm');
+  document.getElementById('admin-undo-reset').onclick = ()=> openModal('modal-undo-confirm');
+  document.getElementById('admin-permanent-reset').onclick = ()=> openModal('modal-permanent-confirm');
+  document.getElementById('admin-clear-worldchat').onclick = async ()=>{
+    if(!confirm('Clear all World Chat messages and files now?')) return;
+    try{
+      const snap = await db.collection(CHAT_COL).limit(1000).get();
+      await Promise.all(snap.docs.map(d=>d.ref.delete()));
+      await SETTINGS_DOC.set({ worldChatBytes:0 }, {merge:true});
+      showToast('✅ World Chat cleared'); renderAdminTab('overview');
+    }catch(e){ showToast('⚠️ Could not clear chat'); }
+  };
+  document.getElementById('admin-local-reset').onclick = ()=>{
+    if(!confirm('Clear local device data (name, XP, coins, level, theme)?')) return;
+    localStorage.clear(); showToast('✅ Local device data cleared. Reloading…'); setTimeout(()=>location.reload(), 800);
+  };
+}
+
+async function collectAllDocs(colName, cap){
+  const snap = await db.collection(colName).limit(cap||1000).get();
+  return snap.docs.map(d=>({id:d.id, data:d.data()}));
+}
+async function performSoftReset(){
+  showToast('⏳ Backing up & resetting…');
+  try{
+    const results = await collectAllDocs(RESULTS_COL, 1000);
+    const certs = await collectAllDocs(CERTS_COL, 1000);
+    const settingsDoc = await SETTINGS_DOC.get();
+    const backup = { results, certs, settings: settingsDoc.exists?settingsDoc.data():{}, ts:Date.now() };
+    await db.collection(BACKUPS_COL).doc('lastReset').set(backup);
+    await Promise.all(results.map(r=>db.collection(RESULTS_COL).doc(r.id).delete()));
+    await Promise.all(certs.map(c=>db.collection(CERTS_COL).doc(c.id).delete()));
+    await SETTINGS_DOC.set({ totalQuizzes:0, totalCertificates:0, todayCount:0, todayKey:new Date().toISOString().split('T')[0] }, {merge:true});
+    cachedResults = [];
+    showToast('✅ Website reset. Backup saved — you can Undo.');
+    refreshGlobalLiveStats();
+  }catch(e){ showToast('⚠️ Reset failed: check connection'); }
+}
+async function performUndoReset(){
+  try{
+    const doc = await db.collection(BACKUPS_COL).doc('lastReset').get();
+    if(!doc.exists){ showToast('⚠️ Nothing to undo'); return; }
+    const backup = doc.data();
+    await Promise.all((backup.results||[]).map(r=>db.collection(RESULTS_COL).doc(r.id).set(r.data)));
+    await Promise.all((backup.certs||[]).map(c=>db.collection(CERTS_COL).doc(c.id).set(c.data)));
+    if(backup.settings) await SETTINGS_DOC.set(backup.settings, {merge:true});
+    await db.collection(BACKUPS_COL).doc('lastReset').delete();
+    showToast('↩️ Undo complete — everything restored');
+    refreshGlobalLiveStats();
+  }catch(e){ showToast('⚠️ Undo failed'); }
+}
+async function performPermanentReset(){
+  try{
+    const results = await collectAllDocs(RESULTS_COL, 1000);
+    const certs = await collectAllDocs(CERTS_COL, 1000);
+    await Promise.all(results.map(r=>db.collection(RESULTS_COL).doc(r.id).delete()));
+    await Promise.all(certs.map(c=>db.collection(CERTS_COL).doc(c.id).delete()));
+    await db.collection(BACKUPS_COL).doc('lastReset').delete().catch(()=>{});
+    await SETTINGS_DOC.set({ totalQuizzes:0, totalCertificates:0, todayCount:0, todayKey:new Date().toISOString().split('T')[0] }, {merge:true});
+    cachedResults = [];
+    showToast('🗑️ Permanently reset — this cannot be undone');
+    refreshGlobalLiveStats();
+  }catch(e){ showToast('⚠️ Reset failed'); }
+}
+
+function exportJSON(){
+  const data = { xp, level, coins:+localStorage.getItem('acq_coins')||0 };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='quiz_data.json'; a.click();
+  showToast('📥 Data exported');
+}
+function printResultOnly(){ document.body.classList.add('printing-result'); window.print(); setTimeout(()=> document.body.classList.remove('printing-result'), 1000); }
+
+function switchScreen(id){
+  if(id !== 'worldchat-screen'){
+    if(chatUnsub){ chatUnsub(); chatUnsub=null; }
+    if(dmUnsub){ dmUnsub(); dmUnsub=null; }
+  }
+  if(id !== 'quiz-screen' && quizTimerInterval){ stopQuizTimer(); }
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
+function showWarning(text){
+  if(!isScreenActive('quiz-screen')) return;
+  tabViolations++;
+  document.getElementById('warning-text').textContent = `${text} (Violation ${tabViolations}/3)`;
+  openModal('modal-warning'); playTone(200);
+  if(tabViolations>=3) finishQuiz();
+}
+function playTone(freq){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.2);
+    osc.start(); osc.stop(ctx.currentTime+0.2);
+  }catch(e){}
+}
+function showToast(msg){
+  const stack = document.getElementById('toast-stack');
+  const t = document.createElement('div'); t.className='toast'; t.textContent=msg;
+  stack.appendChild(t); setTimeout(()=>t.remove(), 3000);
+}
+function escapeHTML(str){ return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function restartQuiz(){ stopQuizTimer(); currentIndex=0; userAnswers={}; switchScreen('welcome-screen'); }
+function updateCoinStats(){
+  const coins = +localStorage.getItem('acq_coins')||0;
+  const el = document.getElementById('coin-stats');
+  if(el) el.innerHTML = `💰 Coins: <b>${coins}</b>`;
+}
+function addXP(amount){
+  xp += amount;
+  const needed = level*100;
+  if(xp >= needed) level++;
+  localStorage.setItem('acq_xp', xp); localStorage.setItem('acq_level', level);
+  updateXPUI();
+}
+function updateXPUI(){
+  const needed = level*100;
+  const pct = ((xp % needed) / needed) * 100;
+  const bar = document.getElementById('xp-bar'); if(bar) bar.style.width = `${pct}%`;
+  const lv = document.getElementById('xp-level-text'); if(lv) lv.textContent = `Level ${level}`;
+  const pr = document.getElementById('xp-progress-text'); if(pr) pr.textContent = `${xp % needed} / ${needed} XP`;
+}
+</script>
+</body>
+</html>
